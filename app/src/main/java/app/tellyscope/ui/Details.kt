@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -39,7 +41,7 @@ fun Details(rows: List<Pair<String, String>>, modifier: Modifier = Modifier) {
             Modifier.clip(MaterialTheme.shapes.small).clickable { open = !open }.padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Details", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(tr("Details", "详情"), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Icon(
                 Icons.Default.KeyboardArrowDown,
                 contentDescription = if (open) "Hide details" else "Show details",

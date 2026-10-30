@@ -4,6 +4,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
@@ -67,8 +69,8 @@ object DeviceIcons {
 
 /** Screen-reader name for the icon. */
 fun DeviceKind.word() = when (this) {
-    DeviceKind.Tv -> "TV"
-    DeviceKind.Projector -> "Projector"
+    DeviceKind.Tv -> tr("TV", "电视")
+    DeviceKind.Projector -> tr("Projector", "投影仪")
     DeviceKind.FireTv -> "Fire TV"
-    DeviceKind.Stick -> "Streaming device"
+    DeviceKind.Stick -> tr("Streaming device", "流媒体设备")
 }

@@ -4,6 +4,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -218,7 +220,7 @@ fun LauncherScreen(
                 },
                 // Dimmed while it installs: stopping halfway could leave the TV half done.
                 navigationIcon = {
-                    IconButton(onClick = close, enabled = fire?.step != FireInstall.Step.Installing) { Icon(Icons.Default.Close, contentDescription = "Close") }
+                    IconButton(onClick = close, enabled = fire?.step != FireInstall.Step.Installing) { Icon(Icons.Default.Close, contentDescription = tr("Close", "关闭")) }
                 },
             )
         },
@@ -495,7 +497,7 @@ private fun FireButtons(f: FireInstall, actions: LauncherActions, modifier: Modi
             }
             FireInstall.Step.Refused -> Row(wide, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
                 if (f.picked) TextButton(onClick = actions.firePick) { Text(Copy.PICK_ANOTHER) }
-                Button(onClick = actions.fireDismiss) { Text("OK") }
+                Button(onClick = actions.fireDismiss) { Text(tr("OK", "确定")) }
             }
         }
     }

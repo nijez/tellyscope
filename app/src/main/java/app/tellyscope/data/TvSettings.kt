@@ -3,6 +3,7 @@
 package app.tellyscope.data
 
 import app.tellyscope.adb.Tweak
+import app.tellyscope.adb.tr
 
 /** What each TV tweak writes, and how History names it afterwards. */
 object TvSettings {
@@ -31,23 +32,37 @@ object TvSettings {
     /** History's line for a change that left the TV at [values]. */
     fun label(tweak: Tweak, values: Map<String, String?>): String = when (tweak) {
         Tweak.PRIVATE_DNS -> when (values["private_dns_mode"]) {
-            "hostname" -> "Private DNS set to ${values["private_dns_specifier"]}"
-            "off" -> "Private DNS turned off"
-            else -> "Private DNS set to Automatic"
+            "hostname" -> tr(
+                "Private DNS set to ${values["private_dns_specifier"]}",
+                "私人 DNS 已设为 ${values["private_dns_specifier"]}",
+            )
+            "off" -> tr("Private DNS turned off", "私人 DNS 已关闭")
+            else -> tr("Private DNS set to Automatic", "私人 DNS 已设为自动")
         }
         Tweak.ANIMATIONS -> when (val v = values["window_animation_scale"]?.toFloatOrNull()) {
-            null, 1f -> "Animations at normal speed"
-            0f -> "Animations turned off"
-            else -> "Animations at ${v.toString().removeSuffix(".0")}×"
+            null, 1f -> tr("Animations at normal speed", "动画为正常速度")
+            0f -> tr("Animations turned off", "动画已关闭")
+            else -> tr(
+                "Animations at ${v.toString().removeSuffix(".0")}×",
+                "动画速度为 ${v.toString().removeSuffix(".0")}×",
+            )
         }
     }
 
-    const val DNS_TOO_OLD = "Private DNS needs Android 9 or newer, and this TV is older"
+    val DNS_TOO_OLD get() = tr(
+        "Private DNS needs Android 9 or newer, and this TV is older",
+        "私人 DNS 需要 Android 9 或更高版本，这台电视更旧",
+    )
 
-    fun dnsUnreachable(host: String?) =
-        "the TV couldn't look anything up through $host, so Private DNS was put back. The network may block encrypted DNS (port 853)"
+    fun dnsUnreachable(host: String?) = tr(
+        "the TV couldn't look anything up through $host, so Private DNS was put back. The network may block encrypted DNS (port 853)",
+        "电视无法通过 $host 解析任何地址，因此已把私人 DNS 改回去。网络可能拦截了加密 DNS（端口 853）",
+    )
 
-    fun dnsStuck(host: String?) =
+    fun dnsStuck(host: String?) = tr(
         "the TV couldn't look anything up through $host, and putting the old Private DNS back failed. " +
-            "The TV may be offline until you undo it in History"
+            "The TV may be offline until you undo it in History",
+        "电视无法通过 $host 解析任何地址，而且把原来的私人 DNS 改回去也失败了。" +
+            "在你于历史记录里撤销之前，电视可能处于离线",
+    )
 }

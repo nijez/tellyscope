@@ -4,10 +4,19 @@ package app.tellyscope
 
 import app.tellyscope.data.Snapshot
 import app.tellyscope.ui.Copy
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
+import java.util.Locale
 
 class HealthTest {
+    private val saved = Locale.getDefault()
+
+    @Before fun english() = Locale.setDefault(Locale.US)
+
+    @After fun restore() = Locale.setDefault(saved)
+
     private fun snap(ram: Double = 0.5, storage: Double? = 0.5) = Snapshot(
         at = 0, cpuPercent = 10,
         ramUsedMb = (ram * 1000).toInt(), ramTotalMb = 1000,

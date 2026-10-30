@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,7 +49,7 @@ fun LoggedOutScreen(device: Device, loggedOutAt: Long, now: Long, onConnect: () 
         topBar = {
             TopAppBar(
                 title = {},
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Back", "返回")) } },
             )
         },
         bottomBar = {
@@ -56,8 +58,8 @@ fun LoggedOutScreen(device: Device, loggedOutAt: Long, now: Long, onConnect: () 
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onBack) { Text("Back to TVs") }
-                Button(onClick = onConnect) { Text("Connect again") }
+                TextButton(onClick = onBack) { Text(tr("Back to TVs", "返回电视列表")) }
+                Button(onClick = onConnect) { Text(tr("Connect again", "再次连接")) }
             }
         },
     ) { pad ->
@@ -80,7 +82,7 @@ fun LoggedOutScreen(device: Device, loggedOutAt: Long, now: Long, onConnect: () 
                 Text(Copy.loggedOutAt(loggedOutAt, now), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Why this can happen", style = MaterialTheme.typography.titleSmall)
+                Text(tr("Why this can happen", "为什么会这样"), style = MaterialTheme.typography.titleSmall)
                 Copy.LOGGED_OUT_CAUSES.forEach { Text("•  $it", style = MaterialTheme.typography.bodyMedium) }
             }
         }

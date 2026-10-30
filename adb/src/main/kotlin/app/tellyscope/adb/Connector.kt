@@ -52,7 +52,7 @@ sealed interface PairResult {
  */
 suspend fun pairOnFreshPort(hint: Int?, find: suspend () -> Int?, pair: suspend (Int) -> PairResult): PairResult {
     val port = find() ?: hint
-        ?: return PairResult.Unreachable("the TV isn't offering pairing; keep \"Pair device with pairing code\" open on it")
+        ?: return PairResult.Unreachable(tr("the TV isn't offering pairing; keep \"Pair device with pairing code\" open on it", "电视没有提供配对。请保持「使用配对码配对设备」打开"))
     val r = pair(port)
     if (r !is PairResult.Unreachable) return r
     return find()?.takeIf { it != port }?.let { pair(it) } ?: r
@@ -111,7 +111,7 @@ object Connector {
      */
     suspend fun connect(host: String, port: Int, allowWaitMs: Int = ALLOW_WAIT_MS): ConnectResult {
         // InetSocketAddress throws IllegalArgumentException outside this range.
-        if (port !in 1..65535) return ConnectResult.Unreachable("port $port is not between 1 and 65535")
+        if (port !in 1..65535) return ConnectResult.Unreachable(tr("port $port is not between 1 and 65535", "端口 $port 不在 1 到 65535 之间"))
         // Probe TCP first: a refused or silent port is "unreachable", not "not allowed".
         try {
             runInterruptible(Dispatchers.IO) { Socket().use { it.connect(InetSocketAddress(host, port), TCP_TIMEOUT_MS) } }
@@ -174,8 +174,8 @@ object Connector {
      * port. Never throws, except to cancel.
      */
     suspend fun pair(host: String, pairingPort: Int, code: String): PairResult {
-        if (code.length != 6 || !code.all(Char::isDigit)) return PairResult.WrongCode("pairing code must be 6 digits")
-        if (pairingPort !in 1..65535) return PairResult.Unreachable("port $pairingPort is not between 1 and 65535")
+        if (code.length != 6 || !code.all(Char::isDigit)) return PairResult.WrongCode(tr("pairing code must be 6 digits", "配对码必须是 6 位数字"))
+        if (pairingPort !in 1..65535) return PairResult.Unreachable(tr("port $pairingPort is not between 1 and 65535", "端口 $pairingPort 不在 1 到 65535 之间"))
         return try {
             Kadb.pair(host, pairingPort, code)
             PairResult.Paired

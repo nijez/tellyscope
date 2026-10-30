@@ -3,6 +3,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.clickable
@@ -69,7 +71,10 @@ internal const val CLEANYOURTV = "https://github.com/Gathin23/cleanyourtv"
 internal val OWN_LISTS_GUIDE = RELEASES.removeSuffix("/releases") + "/blob/main/CONTRIBUTING.md#using-your-own-lists"
 
 /** What Share Tellyscope sends: what it is, then the repo, whose page shows it and how to install. */
-internal val SHARE_TEXT = "I just found Tellyscope, an open-source app that cleans up your Android TV from your phone: turn off the bloat, install apps and send files, with no root and no PC. Free, no tracking. $REPO"
+internal val SHARE_TEXT get() = tr(
+    "I just found Tellyscope, an open-source app that cleans up your Android TV from your phone: turn off the bloat, install apps and send files, with no root and no PC. Free, no tracking. $REPO",
+    "我发现了 Tellyscope，一个开源应用，可以在手机上整理 Android 电视：关掉臃肿应用、安装应用、发送文件，不需要 root，也不需要电脑。免费，不跟踪。$REPO",
+)
 
 /** Android's share sheet with [SHARE_TEXT], so any app the user picks can send it on. */
 internal fun shareTellyscope(context: Context) {
@@ -108,9 +113,9 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(tr("Settings", "设置")) },
                 navigationIcon = {
-                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to the TV's page") }
+                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Back to the TV's page", "返回电视页面")) }
                 },
             )
         },
@@ -129,10 +134,15 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("Check for updates", style = MaterialTheme.typography.titleSmall)
+                            Text(tr("Check for updates", "检查更新"), style = MaterialTheme.typography.titleSmall)
                             Text(
-                                (if (alphaBuild) "Every 5 minutes on alpha builds" else "Every 30 minutes") +
-                                    ", ask GitHub whether a newer Tellyscope is out. Nothing is downloaded.",
+                                if (alphaBuild) tr(
+                                    "Every 5 minutes on alpha builds, ask GitHub whether a newer Tellyscope is out. Nothing is downloaded.",
+                                    "测试版每 5 分钟问一次 GitHub 有没有更新的 Tellyscope。不会下载任何内容。",
+                                ) else tr(
+                                    "Every 30 minutes, ask GitHub whether a newer Tellyscope is out. Nothing is downloaded.",
+                                    "每 30 分钟问一次 GitHub 有没有更新的 Tellyscope。不会下载任何内容。",
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }
@@ -147,8 +157,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("Vibrate on key press", style = MaterialTheme.typography.titleSmall)
-                            Text("A short tick for each key on the Remote.", style = MaterialTheme.typography.bodyMedium)
+                            Text(tr("Vibrate on key press", "按键时振动"), style = MaterialTheme.typography.titleSmall)
+                            Text(tr("A short tick for each key on the Remote.", "遥控器上的每个按键都会轻振一下。"), style = MaterialTheme.typography.bodyMedium)
                         }
                         Spacer(Modifier.width(16.dp))
                         Switch(checked = keyHaptics, onCheckedChange = null)
@@ -158,8 +168,11 @@ fun SettingsScreen(
                         Icon(BugReport, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("Report a problem", style = MaterialTheme.typography.titleSmall)
-                            Text("Opens an issue on Tellyscope\u2019s GitHub. You see the text first.", style = MaterialTheme.typography.bodyMedium)
+                            Text(tr("Report a problem", "报告问题"), style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                tr("Opens an issue on Tellyscope\u2019s GitHub. You see the text first.", "在 Tellyscope 的 GitHub 上开一个 issue。你会先看到正文。"),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
                         }
                         Spacer(Modifier.width(16.dp))
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
@@ -170,7 +183,10 @@ fun SettingsScreen(
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
                             Text(Copy.SHARE, style = MaterialTheme.typography.titleSmall)
-                            Text("Send someone the link to Tellyscope\u2019s GitHub page.", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                tr("Send someone the link to Tellyscope\u2019s GitHub page.", "把 Tellyscope 的 GitHub 页面链接发给别人。"),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
                         }
                         Spacer(Modifier.width(16.dp))
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
@@ -184,7 +200,7 @@ fun SettingsScreen(
                         .padding(horizontal = 4.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Advanced", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text(tr("Advanced", "高级"), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                     Icon(if (advanced) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = null)
                 }
             }
@@ -193,20 +209,20 @@ fun SettingsScreen(
                     ListsFrom(listSource, onOpen = { open(CLEANYOURTV) })
                     HorizontalDivider(color = MaterialTheme.colorScheme.surface)
                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Change", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(tr("Change", "更改"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
-                            "Paste the HTTPS raw folder that holds index.json, e.g. raw.githubusercontent.com/<you>/tellyscope-devices/main/",
+                            tr("Paste the HTTPS raw folder that holds index.json, e.g. raw.githubusercontent.com/<you>/tellyscope-devices/main/", "粘贴存放 index.json 的 HTTPS 原始目录，例如 raw.githubusercontent.com/<you>/tellyscope-devices/main/"),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Row(Modifier.clickable { open(OWN_LISTS_GUIDE) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text("How to use your own lists", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            Text(tr("How to use your own lists", "如何使用自己的清单"), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.width(4.dp))
                             Icon(OpenInNew, contentDescription = null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.surface)
                     Row(Modifier.fillMaxWidth().clickable { editing = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Use your own debloat lists", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                        Text(tr("Use your own debloat lists", "使用自己的精简清单"), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
                     }
                 }
@@ -227,7 +243,7 @@ private fun ListsFrom(source: String?, onOpen: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text("Lists from", style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
+            Text(tr("Lists from", "清单来源"), style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(if (source == null) "cleanyourtv" else sourceName(source), style = MaterialTheme.typography.titleMedium)
                 if (source == null) {
@@ -237,7 +253,7 @@ private fun ListsFrom(source: String?, onOpen: () -> Unit) {
                 }
             }
         }
-        if (source == null) Icon(OpenInNew, contentDescription = "Open cleanyourtv on GitHub", tint = c.onSurfaceVariant)
+        if (source == null) Icon(OpenInNew, contentDescription = tr("Open cleanyourtv on GitHub", "在 GitHub 上打开 cleanyourtv"), tint = c.onSurfaceVariant)
     }
 }
 
@@ -254,7 +270,7 @@ private fun SourceDialog(source: String?, onSave: (String?) -> Unit, onDismiss: 
     var url by rememberSaveable { mutableStateOf(source.orEmpty()) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Where the lists come from") },
+        title = { Text(tr("Where the lists come from", "清单从哪里来")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -267,13 +283,13 @@ private fun SourceDialog(source: String?, onSave: (String?) -> Unit, onDismiss: 
         },
         // Three actions stack full width; two sit side by side.
         confirmButton = {
-            val use = @Composable { m: Modifier -> Button(onClick = { onSave(url) }, enabled = url.isNotBlank(), modifier = m) { Text("Use these lists") } }
+            val use = @Composable { m: Modifier -> Button(onClick = { onSave(url) }, enabled = url.isNotBlank(), modifier = m) { Text(tr("Use these lists", "使用这些清单")) } }
             if (source == null) use(Modifier) else Column(Modifier.fillMaxWidth()) {
                 use(Modifier.fillMaxWidth())
-                TextButton(onClick = { onSave(null) }, Modifier.fillMaxWidth()) { Text("Reset to default") }
-                TextButton(onClick = onDismiss, Modifier.fillMaxWidth()) { Text("Cancel") }
+                TextButton(onClick = { onSave(null) }, Modifier.fillMaxWidth()) { Text(tr("Reset to default", "恢复默认")) }
+                TextButton(onClick = onDismiss, Modifier.fillMaxWidth()) { Text(tr("Cancel", "取消")) }
             }
         },
-        dismissButton = if (source == null) ({ TextButton(onClick = onDismiss) { Text("Cancel") } }) else null,
+        dismissButton = if (source == null) ({ TextButton(onClick = onDismiss) { Text(tr("Cancel", "取消")) } }) else null,
     )
 }

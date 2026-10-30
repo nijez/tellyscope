@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import android.graphics.BitmapFactory
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -157,14 +159,14 @@ internal fun SystemWidget(usedGb: Double?, totalGb: Double?, live: Snapshot?, as
     ) {
         Column(Modifier.padding(16.dp)) {
             if (asOf != null) {
-                Text("As of $asOf", Modifier.padding(bottom = 8.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(tr("As of $asOf", "截至 $asOf"), Modifier.padding(bottom = 8.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             val used = usedGb
             val total = totalGb?.takeIf { it > 0 }
             if (used != null && total != null) {
                 Row {
-                    Text("Internal storage", Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("${Copy.gbOf(used, total)} used", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(tr("Internal storage", "内部存储"), Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(tr("${Copy.gbOf(used, total)} used", "已用 ${Copy.gbOf(used, total)}"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Copy.free(used, total)?.let { Text(it, style = MaterialTheme.typography.titleLarge) }
                 val full = used / total
@@ -196,10 +198,10 @@ private fun Vital(label: String, value: String, modifier: Modifier = Modifier, a
 fun UndoDisableDialog(entry: HistoryEntry, onDisable: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Disable ${entry.label}?") },
+        title = { Text(tr("Disable ${entry.label}?", "停用 ${entry.label}？")) },
         text = { Text(Copy.explain(Action.Disable, entry.label, entry.packageName)) },
         confirmButton = { Button(onClick = onDisable) { Text(Copy.confirm(Action.Disable)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel", "取消")) } },
     )
 }
 
@@ -208,15 +210,19 @@ fun UndoDisableDialog(entry: HistoryEntry, onDisable: () -> Unit, onDismiss: () 
 fun RestoreDialog(count: Int, onRestore: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Turn $count ${if (count == 1) "app" else "apps"} back on?") },
+        title = { Text(tr("Turn $count ${if (count == 1) "app" else "apps"} back on?", "重新启用 $count 个应用？")) },
         text = {
             Text(
-                "Turns back on every app Tellyscope disabled on this TV. " +
-                    "Apps that were already off before Tellyscope's first change stay off.",
+                tr(
+                    "Turns back on every app Tellyscope disabled on this TV. " +
+                        "Apps that were already off before Tellyscope's first change stay off.",
+                    "重新启用 Tellyscope 在这台电视上停用过的每个应用。" +
+                        "Tellyscope 第一次更改之前就已经关闭的应用会保持关闭。",
+                ),
             )
         },
-        confirmButton = { Button(onClick = onRestore) { Text("Turn back on") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(onClick = onRestore) { Text(tr("Turn back on", "重新启用")) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel", "取消")) } },
     )
 }
 
@@ -237,10 +243,10 @@ fun RenameDialog(current: String, fallback: String, onSave: (String) -> Unit, on
     var text by rememberSaveable { mutableStateOf(current) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Rename this TV") },
+        title = { Text(tr("Rename this TV", "重命名这台电视")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Only this phone sees the name. Nothing on the TV changes.")
+                Text(tr("Only this phone sees the name. Nothing on the TV changes.", "只有这台手机能看到这个名称。电视上不会有任何变化。"))
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it.take(app.tellyscope.data.NameBook.MAX_LENGTH) },
@@ -249,8 +255,8 @@ fun RenameDialog(current: String, fallback: String, onSave: (String) -> Unit, on
                 )
             }
         },
-        confirmButton = { Button(onClick = { onSave(text) }) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(onClick = { onSave(text) }) { Text(tr("Save", "保存")) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel", "取消")) } },
     )
 }
 
@@ -259,10 +265,10 @@ fun RenameDialog(current: String, fallback: String, onSave: (String) -> Unit, on
 fun ForgetDialog(name: String, onForget: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Forget $name?") },
-        text = { Text("Tellyscope stops reconnecting to it and removes it from this phone. Nothing on the TV changes. You can add it again from a scan.") },
-        confirmButton = { Button(onClick = onForget) { Text("Forget") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        title = { Text(tr("Forget $name?", "忘记 $name？")) },
+        text = { Text(tr("Tellyscope stops reconnecting to it and removes it from this phone. Nothing on the TV changes. You can add it again from a scan.", "Tellyscope 会停止重连，并从这台手机上移除它。电视上不会有任何变化。你可以扫描后再次添加。")) },
+        confirmButton = { Button(onClick = onForget) { Text(tr("Forget", "忘记")) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel", "取消")) } },
     )
 }
 
@@ -287,14 +293,17 @@ internal fun NotAllowedCard(onConnect: () -> Unit) {
         ),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            CardTitle(Icons.Default.Warning, "The TV didn't allow this phone")
+            CardTitle(Icons.Default.Warning, tr("The TV didn't allow this phone", "电视没有允许这台手机"))
             Text(
-                "Its debugging access was turned off, reset, or denied. Tellyscope stopped asking so the TV isn't flooded with prompts.",
+                tr("Its debugging access was turned off, reset, or denied. Tellyscope stopped asking so the TV isn't flooded with prompts.", "它的调试权限被关闭、重置或拒绝了。Tellyscope 已停止询问，以免电视上不断弹出提示。"),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Button(onClick = onConnect) { Text("Connect again") }
+            Button(onClick = onConnect) { Text(tr("Connect again", "再次连接")) }
             Text(
-                "Then press Allow on the TV, and tick \"Always allow from this computer\".",
+                tr(
+                    "Then press Allow on the TV, and tick \"Always allow from this computer\".",
+                    "然后在电视上按允许，并勾选「一律允许使用这台计算机进行调试」。",
+                ),
                 style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -321,14 +330,17 @@ internal fun OfflineCard(device: Device, now: Long, onReconnect: () -> Unit) {
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                CardTitle(Icons.Default.Info, "Offline")
+                CardTitle(Icons.Default.Info, tr("Offline", "离线"))
                 Text(
-                    "Last seen ${device.lastSeen?.let { Copy.ago(it, now) } ?: "a while ago"}. It reconnects on its own when the TV is back on.",
+                    tr(
+                        "Last seen ${device.lastSeen?.let { Copy.ago(it, now) } ?: "a while ago"}. It reconnects on its own when the TV is back on.",
+                        "上次出现：${device.lastSeen?.let { Copy.ago(it, now) } ?: "有一会儿了"}。电视重新开机后会自动重连。",
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
             Spacer(Modifier.width(12.dp))
-            FilledTonalButton(onClick = onReconnect) { Text("Reconnect") }
+            FilledTonalButton(onClick = onReconnect) { Text(tr("Reconnect", "重新连接")) }
         }
     }
 }
@@ -345,7 +357,7 @@ internal fun heaviest(snap: Snapshot, apps: List<AppInfo>): List<String> {
 @Composable
 internal fun EmptyLine(q: String) {
     Text(
-        if (q.isEmpty()) "Nothing here yet." else "Nothing matches \"$q\".",
+        if (q.isEmpty()) tr("Nothing here yet.", "这里还没有内容。") else tr("Nothing matches \"$q\".", "没有与「$q」匹配的内容。"),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -393,7 +405,7 @@ fun UninstallDialog(app: AppInfo, onUninstall: () -> Unit, onDismiss: () -> Unit
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
             ) { Text(Copy.confirm(Action.Uninstall)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel", "取消")) } },
     )
 }
 
@@ -416,9 +428,9 @@ internal fun AppRow(
     val changeable = app.protectedReason == null || launcher
     val ram = procs.filter { it.packageName == app.packageName }.sumOf { it.ramMb }
     val status = when {
-        !app.enabled -> "Disabled"
-        ram > 0 -> "Running"
-        else -> "Not running"
+        !app.enabled -> tr("Disabled", "已停用")
+        ram > 0 -> tr("Running", "正在运行")
+        else -> tr("Not running", "未运行")
     }
     Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable(enabled = changeable) { open = !open }.padding(vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -427,7 +439,7 @@ internal fun AppRow(
             Column(Modifier.weight(1f)) {
                 Text(app.label, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    app.protectedReason?.let { "Protected: $it" } ?: status,
+                    app.protectedReason?.let { tr("Protected: $it", "受保护：$it") } ?: status,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -468,7 +480,7 @@ internal fun AppRow(
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = actions.confirm, enabled = !locked) { Text(Copy.confirm(proposed)) }
-                        TextButton(onClick = actions.cancel) { Text("Cancel") }
+                        TextButton(onClick = actions.cancel) { Text(tr("Cancel", "取消")) }
                     }
                 }
             }

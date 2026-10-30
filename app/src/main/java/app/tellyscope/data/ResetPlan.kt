@@ -2,6 +2,8 @@
 
 package app.tellyscope.data
 
+import app.tellyscope.adb.tr
+
 /** One app Reset TV changes, with the name it shows. */
 data class ResetApp(val packageName: String, val label: String)
 
@@ -44,7 +46,10 @@ internal object ResetRecord {
     const val TO = "to"
     const val SERVICE = "service"
 
-    fun label(changes: Int) = "Reset TV · $changes ${if (changes == 1) "change" else "changes"}"
+    fun label(changes: Int) = tr(
+        "Reset TV · $changes ${if (changes == 1) "change" else "changes"}",
+        "恢复电视 · $changes 项更改",
+    )
 
     fun list(previous: Map<String, String?>?, key: String) = previous?.get(key)?.split(',')?.filter { it.isNotEmpty() }.orEmpty()
 

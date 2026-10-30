@@ -18,11 +18,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import app.tellyscope.adb.tr
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Proc
 
 /** The Apps tab's own tabs: what's running now, what the user installed, and what came with the TV. */
-enum class AppsTab(val label: String) { Running("Running"), Installed("Installed"), BuiltIn("Built-in") }
+enum class AppsTab {
+    Running, Installed, BuiltIn;
+    val label: String
+        get() = when (this) {
+            Running -> tr("Running", "正在运行")
+            Installed -> tr("Installed", "已安装")
+            BuiltIn -> tr("Built-in", "系统自带")
+        }
+}
 
 /** One Apps tab's list: the apps the user can change, then the [system] ones they can't, under their own header. */
 data class AppsSplit(val apps: List<AppInfo>, val system: List<AppInfo>)
@@ -66,7 +75,7 @@ internal fun SystemHeader(count: Int, folded: Boolean, onFold: (Boolean) -> Unit
         }
         Icon(
             if (folded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-            contentDescription = if (folded) "Show system apps" else "Hide system apps",
+            contentDescription = if (folded) tr("Show system apps", "显示系统应用") else tr("Hide system apps", "隐藏系统应用"),
         )
     }
 }

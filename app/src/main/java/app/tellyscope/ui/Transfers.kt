@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,20 +67,20 @@ internal val Sticky = DialogProperties(dismissOnBackPress = false, dismissOnClic
 @Composable
 fun ActionTiles(actions: DeviceActions, count: Int, todo: Boolean, disabling: Boolean, onDebloat: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Tile(Icons.Default.Add, "Install app", actions.pickApp, Modifier.weight(1f))
+        Tile(Icons.Default.Add, tr("Install app", "安装应用"), actions.pickApp, Modifier.weight(1f))
         Tile(
-            Broom, if (disabling) "Disabling…" else "Debloat", onDebloat, Modifier.weight(1f),
+            Broom, if (disabling) tr("Disabling…", "正在停用…") else tr("Debloat", "精简"), onDebloat, Modifier.weight(1f),
             enabled = !disabling, primary = todo, badge = count.takeIf { todo && it > 0 },
         )
         // Where the file lands is the user's choice, every time, not whatever folder was last shown.
         var choosing by remember { mutableStateOf(false) }
         Box(Modifier.weight(1f)) {
             @Suppress("DEPRECATION") // the AutoMirrored set isn't in icons-core
-            Tile(Icons.Default.Send, "Send file", { choosing = true }, Modifier.fillMaxWidth())
+            Tile(Icons.Default.Send, tr("Send file", "发送文件"), { choosing = true }, Modifier.fillMaxWidth())
             DropdownMenu(choosing, onDismissRequest = { choosing = false }) {
                 TvFolder.entries.forEach { f ->
                     DropdownMenuItem(
-                        text = { Text("To ${Copy.folder(f)}") },
+                        text = { Text(tr("To ${Copy.folder(f)}", "到${Copy.folder(f)}")) },
                         onClick = { choosing = false; actions.pickFile(f) },
                     )
                 }
@@ -153,7 +155,7 @@ fun FilesBlock(files: FilesUi, now: Long, actions: DeviceActions) {
         else -> {
             list.forEach { f -> FileRow(f, now) { actions.saveFile(f) } }
             // Only with files to tap; an empty folder shows its own page instead.
-            if (list.isNotEmpty()) Muted("Tap a file to save a copy on your phone.")
+            if (list.isNotEmpty()) Muted(tr("Tap a file to save a copy on your phone.", "点一个文件，把副本保存到手机。"))
         }
     }
 }
@@ -172,7 +174,7 @@ private fun FileRow(f: TvFile, now: Long, onSave: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        TextButton(onClick = onSave) { Text("Save") }
+        TextButton(onClick = onSave) { Text(tr("Save", "保存")) }
     }
 }
 
@@ -197,8 +199,8 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
         title = {
             Text(
                 when (s.step) {
-                    SideloadUi.Step.Reading -> "Reading the app"
-                    SideloadUi.Step.Failed -> app?.let { "Couldn't install ${it.label}" } ?: "Can't install that"
+                    SideloadUi.Step.Reading -> tr("Reading the app", "正在读取应用")
+                    SideloadUi.Step.Failed -> app?.let { tr("Couldn't install ${it.label}", "无法安装 ${it.label}") } ?: tr("Can't install that", "无法安装")
                     SideloadUi.Step.Installed -> Copy.installed(kind ?: InstallKind.NEW, app?.label.orEmpty())
                     else -> app?.label.orEmpty()
                 },
@@ -244,7 +246,7 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
                         if (sending) LinearWavyProgressIndicator(progress = { f }, Modifier.fillMaxWidth())
                         else LinearWavyProgressIndicator(Modifier.fillMaxWidth())
                         Text(
-                            if (sending) "Sending to the TV · ${(f * 100).toInt()}%" else "Installing on the TV…",
+                            if (sending) tr("Sending to the TV · ${(f * 100).toInt()}%", "正在发送到电视 · ${(f * 100).toInt()}%") else tr("Installing on the TV…", "正在安装到电视上…"),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Muted(Copy.INSTALL_KEEP_OPEN)
@@ -252,7 +254,7 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
                     SideloadUi.Step.Failed -> {
                         Text(s.error.orEmpty(), style = MaterialTheme.typography.bodyMedium)
                         s.detail?.takeIf { it.isNotBlank() }?.let {
-                            Text("The TV said: $it", style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4, overflow = TextOverflow.Ellipsis)
+                            Text(tr("The TV said: $it", "电视说：$it"), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4, overflow = TextOverflow.Ellipsis)
                         }
                     }
                     else -> Unit
@@ -265,16 +267,16 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
                     onClick = actions.install,
                     enabled = kind != InstallKind.DOWNGRADE || s.allowDowngrade,
                 ) { Text(Copy.installButton(kind)) }
-                SideloadUi.Step.Installed -> Button(onClick = actions.openInstalled) { Text("Open on TV") }
-                SideloadUi.Step.Failed -> Button(onClick = actions.closeSideload) { Text("OK") }
+                SideloadUi.Step.Installed -> Button(onClick = actions.openInstalled) { Text(tr("Open on TV", "在电视上打开")) }
+                SideloadUi.Step.Failed -> Button(onClick = actions.closeSideload) { Text(tr("OK", "确定")) }
                 else -> Unit
             }
         },
         dismissButton = {
             when (s.step) {
-                SideloadUi.Step.Reading, SideloadUi.Step.Ready -> TextButton(onClick = actions.closeSideload) { Text("Cancel") }
-                SideloadUi.Step.Installed -> TextButton(onClick = actions.closeSideload) { Text("Done") }
-                SideloadUi.Step.Failed -> TextButton(onClick = { actions.reportInstall(s) }) { Text("Report a problem") }
+                SideloadUi.Step.Reading, SideloadUi.Step.Ready -> TextButton(onClick = actions.closeSideload) { Text(tr("Cancel", "取消")) }
+                SideloadUi.Step.Installed -> TextButton(onClick = actions.closeSideload) { Text(tr("Done", "完成")) }
+                SideloadUi.Step.Failed -> TextButton(onClick = { actions.reportInstall(s) }) { Text(tr("Report a problem", "报告问题")) }
                 else -> Unit
             }
         },
@@ -288,7 +290,7 @@ fun TransferDialog(t: TransferUi, onCancel: () -> Unit) {
     AlertDialog(
         onDismissRequest = {},
         properties = Sticky,
-        title = { Text(if (t.toTv) "Sending to ${Copy.folder(t.folder)}" else "Saving to your phone") },
+        title = { Text(if (t.toTv) tr("Sending to ${Copy.folder(t.folder)}", "正在发送到${Copy.folder(t.folder)}") else tr("Saving to your phone", "正在保存到手机")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(t.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.MiddleEllipsis)
@@ -296,13 +298,13 @@ fun TransferDialog(t: TransferUi, onCancel: () -> Unit) {
                 if (f != null) LinearWavyProgressIndicator(progress = { f }, Modifier.fillMaxWidth())
                 else LinearWavyProgressIndicator(Modifier.fillMaxWidth())
                 Text(
-                    t.progress?.let { p -> p.total?.let { "${Copy.bytes(p.done)} of ${Copy.bytes(it)}" } ?: Copy.bytes(p.done) } ?: "Starting…",
+                    t.progress?.let { p -> p.total?.let { "${Copy.bytes(p.done)} of ${Copy.bytes(it)}" } ?: Copy.bytes(p.done) } ?: tr("Starting…", "正在开始…"),
                     style = SmallNumber,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onCancel) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onCancel) { Text(tr("Cancel", "取消")) } },
     )
 }

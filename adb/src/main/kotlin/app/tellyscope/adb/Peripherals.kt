@@ -33,7 +33,7 @@ class Peripherals(private val shell: AdbShell) {
         val storage = volumes(out("sm list-volumes public")).map { (_, uuid) ->
             val label = uuid?.let { labels(out("dumpsys mount | grep -F 'fsUuid=$it'"))[it] }
             val free = uuid?.let { free(out("df -k /storage/$it")) }
-            Peripheral(label ?: "USB drive", Peripheral.Group.Storage, Peripheral.Kind.Usb, true, "Connected", free)
+            Peripheral(label ?: tr("USB drive", "U 盘"), Peripheral.Group.Storage, Peripheral.Kind.Usb, true, tr("Connected", "已连接"), free)
         }
         return paired + inputs.filter { it.name !in btNames } + storage + hdmi(out("dumpsys hdmi_control")) + listOfNotNull(audio(out("dumpsys audio")))
     }
@@ -52,7 +52,7 @@ class Peripherals(private val shell: AdbShell) {
                 Peripheral(
                     name, Peripheral.Group.Bluetooth, input?.kind ?: guess(name),
                     live = input != null,
-                    status = if (input != null) "Connected" else "Paired",
+                    status = if (input != null) tr("Connected", "已连接") else tr("Paired", "已配对"),
                 )
             }.toList()
         }
@@ -94,7 +94,7 @@ class Peripherals(private val shell: AdbShell) {
             }
             flush()
             return found.mapNotNull { (n, info) ->
-                val via = when (info.second) { BT_BUS -> "Bluetooth"; USB_BUS -> "USB"; else -> return@mapNotNull null }
+                val via = when (info.second) { BT_BUS -> tr("Bluetooth", "蓝牙"); USB_BUS -> "USB"; else -> return@mapNotNull null }
                 Triple(n, kind(info.first), via)
             }.groupBy { it.first }.map { (n, rows) ->
                 // One remote shows up as several devices; the strongest kind wins.
@@ -170,7 +170,10 @@ class Peripherals(private val shell: AdbShell) {
             Triple(addr, name.trim(), type.toInt() to (power == "0"))
         }.distinctBy { it.first }.map { (_, name, info) ->
             val (type, on) = info
-            Peripheral(name, Peripheral.Group.Hdmi, if (type == AUDIO_SYSTEM) Peripheral.Kind.Speaker else Peripheral.Kind.Hdmi, on, if (on) "On" else "Standby")
+            Peripheral(
+                name, Peripheral.Group.Hdmi, if (type == AUDIO_SYSTEM) Peripheral.Kind.Speaker else Peripheral.Kind.Hdmi, on,
+                if (on) tr("On", "开机") else tr("Standby", "待机"),
+            )
         }.toList()
 
         private const val AUDIO_SYSTEM = 5
@@ -181,17 +184,17 @@ class Peripherals(private val shell: AdbShell) {
             val devices = Regex("Devices:\\s*(\\S[^\\r\\n]*)").find(music)?.groupValues?.get(1)?.trim() ?: return null
             val first = devices.split(Regex("[\\s,|]+")).firstOrNull { it.isNotBlank() } ?: return null
             val to = when {
-                first == "speaker" -> "TV speakers"
+                first == "speaker" -> tr("TV speakers", "电视扬声器")
                 first.startsWith("hdmi_earc") -> "HDMI eARC"
                 first.startsWith("hdmi_arc") -> "HDMI ARC"
                 first.startsWith("hdmi") -> "HDMI"
-                first.startsWith("bt_") || first.startsWith("ble_") -> "Bluetooth"
-                first.startsWith("usb") -> "USB audio"
-                first.startsWith("wired_") || first == "line" || first.startsWith("headphone") -> "Headphone jack"
-                first == "spdif" -> "Optical"
+                first.startsWith("bt_") || first.startsWith("ble_") -> tr("Bluetooth", "蓝牙")
+                first.startsWith("usb") -> tr("USB audio", "USB 音频")
+                first.startsWith("wired_") || first == "line" || first.startsWith("headphone") -> tr("Headphone jack", "耳机孔")
+                first == "spdif" -> tr("Optical", "光纤")
                 else -> first
             }
-            return Peripheral("Sound output", Peripheral.Group.Audio, Peripheral.Kind.Sound, true, to)
+            return Peripheral(tr("Sound output", "声音输出"), Peripheral.Group.Audio, Peripheral.Kind.Sound, true, to)
         }
     }
 }

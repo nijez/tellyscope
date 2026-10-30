@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -81,7 +83,7 @@ fun AdvancedScreen(
             TopAppBar(
                 title = { Text(Copy.ADVANCED_MONITOR) },
                 navigationIcon = {
-                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to the TV's page") }
+                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Back to the TV's page", "返回电视页面")) }
                 },
             )
         },
@@ -94,12 +96,12 @@ fun AdvancedScreen(
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                     Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                        Text("This TV", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 4.dp))
+                        Text(tr("This TV", "这台电视"), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 4.dp))
                         listOfNotNull(
-                            "IP address" to device.hit.ip,
+                            tr("IP address", "IP 地址") to device.hit.ip,
                             "Port" to device.hit.port.toString(),
                             (device.manufacturer ?: device.hit.maker)?.let { "Maker" to it },
-                            device.hit.hostname?.let { "Network name" to it },
+                            device.hit.hostname?.let { tr("Network name", "网络名称") to it },
                         ).forEach { (k, v) -> KeyValue(k, v) }
                     }
                 }
@@ -110,7 +112,7 @@ fun AdvancedScreen(
             } else {
                 item {
                     Text(
-                        if (offline) Copy.noStats(device.state) else "Loading stats…",
+                        if (offline) Copy.noStats(device.state) else tr("Loading stats…", "正在加载状态…"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -118,9 +120,9 @@ fun AdvancedScreen(
             }
             // A TV that lists no processes gets no charts: no bars beats an empty card.
             if (byApp.isNotEmpty()) {
-                item { UsageCard("CPU by app", byApp.map { (n, ps) -> n to ps.sumOf { it.cpuPercent } }, fmt = { "%.0f%%".format(it) }) }
-                item { UsageCard("RAM by app", byApp.map { (n, ps) -> n to ps.sumOf { it.ramMb }.toDouble() }, fmt = { Copy.mb(it.toInt()) }) }
-                item { Block("Processes") { ProcessTable(snap?.procs.orEmpty(), ui.apps) } }
+                item { UsageCard(tr("CPU by app", "按应用统计的 CPU"), byApp.map { (n, ps) -> n to ps.sumOf { it.cpuPercent } }, fmt = { "%.0f%%".format(it) }) }
+                item { UsageCard(tr("RAM by app", "按应用统计的内存"), byApp.map { (n, ps) -> n to ps.sumOf { it.ramMb }.toDouble() }, fmt = { Copy.mb(it.toInt()) }) }
+                item { Block(tr("Processes", "进程")) { ProcessTable(snap?.procs.orEmpty(), ui.apps) } }
             }
             ui.network?.let { n -> item { Block("Network") { NetworkBlock(n) } } }
         }
@@ -180,7 +182,7 @@ private fun Meter(label: String, usedGb: Double, totalGb: Double) {
         Row(verticalAlignment = Alignment.Bottom) {
             Column(Modifier.weight(1f)) {
                 Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${(frac * 100).toInt()}% used", style = StatNumber)
+                Text(tr("${(frac * 100).toInt()}% used", "已用 ${(frac * 100).toInt()}%"), style = StatNumber)
             }
             Text(Copy.gbOf(usedGb, totalGb), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -232,9 +234,9 @@ private fun ProcessTable(procs: List<Proc>, apps: List<AppInfo>) {
         .sortedByDescending { (_, ps) -> ps.sumOf { it.cpuPercent } }
     if (groups.isEmpty()) return EmptyLine("")
     Row {
-        Text("App", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(tr("App", "应用"), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text("CPU", Modifier.width(56.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
-        Text("RAM", Modifier.width(72.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
+        Text(tr("RAM", "内存"), Modifier.width(72.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
     }
     groups.forEach { (name, ps) ->
         var open by rememberSaveable(name) { mutableStateOf(false) }
@@ -262,17 +264,17 @@ private fun ProcessTable(procs: List<Proc>, apps: List<AppInfo>) {
 private fun NetworkBlock(n: NetworkInfo) {
     // Already the technical screen: every fact shows, nothing behind a Details tap.
     listOfNotNull(
-        "Connection" to listOfNotNull(if (n.iface == "wifi" || n.iface.startsWith("wlan")) "Wi-Fi" else "Ethernet", n.ssid).joinToString(" · "),
+        tr("Connection", "连接") to listOfNotNull(if (n.iface == "wifi" || n.iface.startsWith("wlan")) tr("Wi-Fi", "Wi-Fi") else tr("Ethernet", "以太网"), n.ssid).joinToString(" · "),
         n.rssi?.let { "Signal" to "${signalWord(it).replaceFirstChar(Char::uppercase)} ($it dBm)" },
-        "IP address" to n.ip,
+        tr("IP address", "IP 地址") to n.ip,
         n.mac?.let { "MAC" to it },
-        n.linkMbps?.let { "Link speed" to "$it Mbps" },
+        n.linkMbps?.let { tr("Link speed", "连接速度") to "$it Mbps" },
     ).forEach { (k, v) -> KeyValue(k, v) }
     Spacer(Modifier.height(8.dp))
-    Text("Data used", style = MaterialTheme.typography.titleSmall)
+    Text(tr("Data used", "已用流量"), style = MaterialTheme.typography.titleSmall)
     Bars(n.traffic.map { it.app to (it.rxMb + it.txMb).toDouble() }, fmt = { Copy.mb(it.toInt()) })
     Spacer(Modifier.height(8.dp))
-    Text("Open connections", style = MaterialTheme.typography.titleSmall)
+    Text(tr("Open connections", "打开的连接"), style = MaterialTheme.typography.titleSmall)
     if (n.sockets.isEmpty()) EmptyLine("")
     n.sockets.forEach { s ->
         Row(Modifier.padding(vertical = 2.dp)) {

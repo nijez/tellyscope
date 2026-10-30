@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -291,7 +293,7 @@ private fun TvChips(state: UiState, actions: DeviceActions) {
             )
         }
         // Adding a TV sits with the TVs, as the last chip.
-        AssistChip(onClick = actions.addDevice, label = { Text("Device") }, leadingIcon = { Icon(Icons.Default.Add, contentDescription = "Add a", Modifier.size(18.dp)) })
+        AssistChip(onClick = actions.addDevice, label = { Text(tr("Device", "设备")) }, leadingIcon = { Icon(Icons.Default.Add, contentDescription = tr("Add a", "添加"), Modifier.size(18.dp)) })
     }
 }
 

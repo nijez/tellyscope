@@ -104,6 +104,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.TvFolder
+import app.tellyscope.adb.tr
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.DeviceState
@@ -113,7 +114,16 @@ import app.tellyscope.data.Suggestions
 import kotlinx.coroutines.launch
 
 /** The TV page's destinations, one job each, in the bottom bar. */
-enum class TvTab(val label: String) { Overview("Overview"), Apps("Apps"), Files("Files"), Tweaks("Tweaks") }
+enum class TvTab {
+    Overview, Apps, Files, Tweaks;
+    val label: String
+        get() = when (this) {
+            Overview -> tr("Overview", "概览")
+            Apps -> tr("Apps", "应用")
+            Files -> tr("Files", "文件")
+            Tweaks -> tr("Tweaks", "调整")
+        }
+}
 
 private object TabIcons {
     val Apps = icon(
@@ -231,9 +241,9 @@ fun DeviceTabsScreen(
             // Each tab's main action as Material's extended FAB: the Remote on Overview, install on Apps, upload on Files.
             floatingActionButton = {
                 if (!offline) when (tab) {
-                    TvTab.Overview -> ExtendedFloatingActionButton(onClick = actions.remote, icon = { Icon(TileIcons.Remote, null) }, text = { Text("Remote") })
-                    TvTab.Apps -> ExtendedFloatingActionButton(onClick = actions.pickApp, icon = { Icon(Icons.Default.Add, null) }, text = { Text("Install app") })
-                    TvTab.Files -> ExtendedFloatingActionButton(onClick = { actions.pickFile(ui.files.folder) }, icon = { Icon(TileIcons.Upload, null) }, text = { Text("Upload files") })
+                    TvTab.Overview -> ExtendedFloatingActionButton(onClick = actions.remote, icon = { Icon(TileIcons.Remote, null) }, text = { Text(tr("Remote", "遥控器")) })
+                    TvTab.Apps -> ExtendedFloatingActionButton(onClick = actions.pickApp, icon = { Icon(Icons.Default.Add, null) }, text = { Text(tr("Install app", "安装应用")) })
+                    TvTab.Files -> ExtendedFloatingActionButton(onClick = { actions.pickFile(ui.files.folder) }, icon = { Icon(TileIcons.Upload, null) }, text = { Text(tr("Upload files", "上传文件")) })
                     else -> {}
                 }
             },
@@ -316,7 +326,7 @@ fun DeviceTabsScreen(
                         if (live != null) {
                             item { SystemWidget(live) }
                         } else if (offline && used != null && total != null) {
-                            item { SystemWidget(used, total, null, asOf = device.lastSeen?.let { Copy.ago(it, state.clock()) } ?: "the last visit") }
+                            item { SystemWidget(used, total, null, asOf = device.lastSeen?.let { Copy.ago(it, state.clock()) } ?: tr("the last visit", "上次查看")) }
                         } else if (offline) {
                             item { Muted(Copy.noStats(device.state)) }
                         }
@@ -391,19 +401,19 @@ fun DeviceTabsScreen(
                         }
                         val folder = ui.files.folder
                         when {
-                            offline -> item { EmptyState(DeviceIcons.Tv, Copy.TV_OFFLINE, "Connect to the TV to see its files.") }
+                            offline -> item { EmptyState(DeviceIcons.Tv, Copy.TV_OFFLINE, tr("Connect to the TV to see its files.", "连接电视后即可查看文件。")) }
                             ui.files.error == null && ui.files.list?.isEmpty() == true -> item {
                                 EmptyState(
                                     if (folder == TvFolder.MOVIES) TileIcons.Movie else TabIcons.Folder,
-                                    "Nothing in ${Copy.folder(folder)} yet",
-                                    "Files you send land here.",
+                                    tr("Nothing in ${Copy.folder(folder)} yet", "${Copy.folder(folder)}里还没有文件"),
+                                    tr("Files you send land here.", "你发送的文件会放在这里。"),
                                 )
                             }
                             else -> item { FilesBlock(ui.files, state.clock(), actions) }
                         }
                     }
                     TvTab.Tweaks -> {
-                        if (offline) item { Muted("Connect to the TV to change its settings.") }
+                        if (offline) item { Muted(tr("Connect to the TV to change its settings.", "连接电视后即可更改设置。")) }
                         else {
                             if (homeLaunchers(ui.apps).isNotEmpty()) item { Panel(Copy.HOME_SCREEN) { HomeScreenBlock(ui, actions, fire) } }
                             item { Panel(Copy.TWEAKS) { TweaksBlock(ui, actions) } }
@@ -469,7 +479,7 @@ private fun AppMenu(state: UiState, actions: DeviceActions) {
     val fresh = state.historyNew
     IconButton(onClick = { open = true }) {
         // The access warning shows on ⋮ too, so it's there from every tab; it outranks a new change.
-        BadgedBox(badge = { MenuDot(others > 0, fresh) }) { Icon(Icons.Default.MoreVert, contentDescription = "More options") }
+        BadgedBox(badge = { MenuDot(others > 0, fresh) }) { Icon(Icons.Default.MoreVert, contentDescription = Copy.MORE) }
     }
     if (!open) return
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -490,7 +500,7 @@ private fun AppMenu(state: UiState, actions: DeviceActions) {
             }
             val off = HistoryBook.leftDisabled(state.device.history).size
             SheetGroup(
-                { MenuRow(Icons.Default.Edit, "Rename this TV") { pick { renaming = true } } },
+                { MenuRow(Icons.Default.Edit, tr("Rename this TV", "重命名这台电视")) { pick { renaming = true } } },
                 { MenuRow(HistoryIcons.History, Copy.HISTORY, Copy.stillOff(off).takeIf { off > 0 }, dot = { if (fresh) MenuDot(false, true) }) { pick(actions.history) } },
                 {
                     MenuRow(
@@ -503,15 +513,15 @@ private fun AppMenu(state: UiState, actions: DeviceActions) {
             )
             Text("Tellyscope", style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant, modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp))
             SheetGroup(
-                { MenuRow(Icons.Default.Settings, "Settings") { pick(actions.settings) } },
+                { MenuRow(Icons.Default.Settings, tr("Settings", "设置")) { pick(actions.settings) } },
                 { MenuRow(Icons.Default.Share, Copy.SHARE) { pick { shareTellyscope(context) } } },
-                { MenuRow(Icons.Default.Info, "About & licences") { pick { about = true } } },
+                { MenuRow(Icons.Default.Info, tr("About & licences", "关于和许可")) { pick { about = true } } },
             )
             Spacer(Modifier.height(16.dp))
             // Apart, and Forget in red, so neither is one slip from an everyday item.
             SheetGroup(
                 { MenuRow(HistoryIcons.History, Copy.RESET_TV, Copy.RESET_KEEPS) { pick(actions.reset) } },
-                { MenuRow(Icons.Default.Delete, "Forget this TV", tint = c.error) { pick { forgetting = true } } },
+                { MenuRow(Icons.Default.Delete, tr("Forget this TV", "忘记这台电视"), tint = c.error) { pick { forgetting = true } } },
             )
         }
     }
@@ -567,14 +577,14 @@ internal fun MenuBlock(items: @Composable () -> Unit) {
     ) { Column { items() } }
 }
 
-/** "Search apps" under the Apps buttons, pinned with them; a tap opens the search at the top. */
+/** tr("Search apps", "搜索应用") under the Apps buttons, pinned with them; a tap opens the search at the top. */
 @Composable
 private fun SearchPill(enabled: Boolean, onClick: () -> Unit) {
     Surface(onClick = onClick, enabled = enabled, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(16.dp))
-            Text("Search apps", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(tr("Search apps", "搜索应用"), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -590,11 +600,11 @@ private fun SearchHeader(query: String, onQuery: (String) -> Unit, onClose: () -
     Column(Modifier.background(MaterialTheme.colorScheme.surface).statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close search") }
+                IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Close search", "关闭搜索")) }
                 TextField(
                     value = query,
                     onValueChange = onQuery,
-                    placeholder = { Text("Search apps") },
+                    placeholder = { Text(tr("Search apps", "搜索应用")) },
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
@@ -604,7 +614,7 @@ private fun SearchHeader(query: String, onQuery: (String) -> Unit, onClose: () -
                     ),
                     modifier = Modifier.weight(1f).focusRequester(focus),
                 )
-                if (query.isNotEmpty()) IconButton(onClick = { onQuery("") }) { Icon(Icons.Default.Close, contentDescription = "Clear search") }
+                if (query.isNotEmpty()) IconButton(onClick = { onQuery("") }) { Icon(Icons.Default.Close, contentDescription = tr("Clear search", "清除搜索")) }
             }
         }
     }
@@ -675,46 +685,50 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
 @Composable
 private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean, onChanges: () -> Unit) {
     val c = MaterialTheme.colorScheme
-    val apps = { n: Int -> if (n == 1) "1 app" else "$n apps" }
     Card(colors = CardDefaults.cardColors(containerColor = c.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
         Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     when (lists) {
                         is Suggestions.Ready -> when {
-                            d.total == 0 -> "Nothing from the ${lists.list.name} list is on this TV"
-                            d.on == 0 -> if (d.total == 1) "The suggested app is off" else "All ${d.total} suggested apps are off"
-                            else -> "${d.total - d.on} of ${d.total} suggested apps are off"
+                            d.total == 0 -> tr("Nothing from the ${lists.list.name} list is on this TV", "这台电视上没有 ${lists.list.name} 清单中的应用")
+                            d.on == 0 -> if (d.total == 1) tr("The suggested app is off", "建议的应用已关闭")
+                            else tr("All ${d.total} suggested apps are off", "建议的 ${d.total} 个应用都已关闭")
+                            else -> tr("${d.total - d.on} of ${d.total} suggested apps are off", "建议的 ${d.total} 个应用中有 ${d.total - d.on} 个已关闭")
                         }
-                        is Suggestions.NoList -> "No list for this TV yet"
-                        Suggestions.Unavailable -> "Couldn't load the device lists"
-                        null -> if (offline) "Connect to the TV to see its suggestions" else "Looking up this TV's list\u2026"
+                        is Suggestions.NoList -> tr("No list for this TV yet", "还没有这台电视的清单")
+                        Suggestions.Unavailable -> tr("Couldn't load the device lists", "无法加载设备清单")
+                        null -> if (offline) tr("Connect to the TV to see its suggestions", "连接电视后即可查看建议")
+                        else tr("Looking up this TV's list\u2026", "正在查找这台电视的清单…")
                     },
                     Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                TextButton(onClick = onChanges) { Text("See changes") }
+                TextButton(onClick = onChanges) { Text(tr("See changes", "查看更改")) }
             }
             if (d.back > 0) {
                 Text(
                     buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append("Action required: ") }
-                        append("${apps(d.back)} came back on")
+                        withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(tr("Action required: ", "需要处理：")) }
+                        append(tr("${Copy.apps(d.back)} came back on", "${Copy.apps(d.back)}又打开了"))
                     },
                     Modifier.padding(end = 8.dp, bottom = 4.dp),
                     style = MaterialTheme.typography.bodyLarge, color = c.error,
                 )
             }
             val note = when {
-                lists is Suggestions.Unavailable -> "Check the phone's internet and open this TV again."
-                lists is Suggestions.NoList -> "Tap Debloat to pick the apps to turn off by hand."
-                lists is Suggestions.Ready && lists.byMaker -> "No list for this exact model, so these come from ${lists.list.name}'s other TVs."
-                lists is Suggestions.Ready && !d.todo -> "Debloat now opens Apps for one-off changes."
+                lists is Suggestions.Unavailable -> tr("Check the phone's internet and open this TV again.", "请检查手机网络，然后重新打开这台电视。")
+                lists is Suggestions.NoList -> tr("Tap Debloat to pick the apps to turn off by hand.", "点「精简」，手动选择要关闭的应用。")
+                lists is Suggestions.Ready && lists.byMaker -> tr(
+                    "No list for this exact model, so these come from ${lists.list.name}'s other TVs.",
+                    "没有这个具体型号的清单，因此这些来自 ${lists.list.name} 的其他电视。",
+                )
+                lists is Suggestions.Ready && !d.todo -> tr("Debloat now opens Apps for one-off changes.", "现在点「精简」会打开「应用」，以便逐个更改。")
                 else -> null
             }
             note?.let { Text(it, Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant) }
             if (lists is Suggestions.Ready) {
-                Text("Lists adapted from cleanyourtv (MIT).", Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                Text(tr("Lists adapted from cleanyourtv (MIT).", "清单改编自 cleanyourtv（MIT）。"), Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
             }
         }
     }
@@ -728,8 +742,8 @@ private fun AndroidCard(state: UiState, snap: Snapshot?, offline: Boolean, onUpd
         StatusRow(
             Icons.Default.Info,
             device.android?.let { "Android $it" } ?: "Android",
-            (snap?.softwareMonth ?: device.lastKnown?.softwareMonth)?.let { "Updated ${Copy.month(it)}" },
-            "Check for updates", !offline, onUpdates,
+            (snap?.softwareMonth ?: device.lastKnown?.softwareMonth)?.let { tr("Updated ${Copy.month(it)}", "${Copy.month(it)} 更新") },
+            tr("Check for updates", "检查更新"), !offline, onUpdates,
         )
     }
 }
