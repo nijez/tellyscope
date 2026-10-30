@@ -16,8 +16,10 @@ import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
 import app.tellyscope.ui.Copy
 import app.tellyscope.ui.LoggedOutScreen
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,11 +27,17 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Locale
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class LoggedOutTest {
     @get:Rule val compose = createComposeRule()
+    private val saved = Locale.getDefault()
+
+    @Before fun english() = Locale.setDefault(Locale.US)
+
+    @After fun restore() = Locale.setDefault(saved)
 
     private fun tv(id: String, nickname: String, loggedOutAt: Long? = null) = Device(
         id, ScanHit(id, 5555, ScanKind.Classic, id, null), if (loggedOutAt != null) DeviceState.NotAllowed else DeviceState.Online,

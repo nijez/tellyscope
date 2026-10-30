@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -81,7 +83,7 @@ fun HistoryScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to the TV's page") }
+                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Back to the TV's page", "返回电视页面")) }
                 },
             )
         },
@@ -133,9 +135,9 @@ internal fun HistoryList(
                         if (restoring) {
                             CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.width(8.dp))
-                            Text("Turning apps back on…")
+                            Text(tr("Turning apps back on…", "正在重新启用应用…"))
                         } else {
-                            Text("Restore everything ($off)")
+                            Text(tr("Restore everything ($off)", "全部恢复（$off）"))
                         }
                     }
                 }
@@ -159,7 +161,7 @@ internal fun HistoryList(
                         ) {
                             Icon(Icons.Default.Check, contentDescription = null, Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Undone")
+                            Text(tr("Undone", "已撤销"))
                         }
                         h.undo != null -> TextButton(onClick = { if (h.undo == Action.Disable) disabling = h else onUndo(h) }, enabled = !busy) { Text(Copy.undo(h.undo)) }
                     }

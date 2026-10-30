@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -149,7 +151,7 @@ fun DebloatScreen(
         showing != null -> showing.groups
         lists is Suggestions.NoList -> listOf(
             SuggestedGroup(
-                "Apps on this TV",
+                tr("Apps on this TV", "这台电视上的应用"),
                 tvApps.filter { it.enabled && it.protectedReason == null && !it.builtInLauncher }.sortedBy { it.label.lowercase() }
                     .map { Suggested(it.packageName, it.label, note = null, optional = false, ticked = false) },
             ),
@@ -170,9 +172,9 @@ fun DebloatScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
-                title = { Text(if (searching) "Which TV is this?" else "Debloat") },
+                title = { Text(if (searching) tr("Which TV is this?", "这是哪台电视？") else tr("Debloat", "精简")) },
                 navigationIcon = {
-                    IconButton(onClick = goBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = goBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Back", "返回")) }
                 },
             )
         },
@@ -181,13 +183,13 @@ fun DebloatScreen(
             Surface(tonalElevation = 3.dp, modifier = Modifier.imePadding()) {
                 Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
                     if (searching) {
-                        Button(onClick = use, enabled = marked != null, modifier = Modifier.fillMaxWidth()) { Text("Use this list") }
+                        Button(onClick = use, enabled = marked != null, modifier = Modifier.fillMaxWidth()) { Text(tr("Use this list", "使用这份清单")) }
                     } else {
                         Button(
                             onClick = { confirming = true },
                             enabled = groups != null && ticked.isNotEmpty() && !busy,
                             modifier = Modifier.fillMaxWidth(),
-                        ) { Text("Disable ${ticked.size} ${if (ticked.size == 1) "app" else "apps"}") }
+                        ) { Text(tr("Disable ${ticked.size} ${if (ticked.size == 1) "app" else "apps"}", "停用 ${ticked.size} 个应用")) }
                     }
                 }
             }
@@ -202,10 +204,10 @@ fun DebloatScreen(
                 item {
                     OutlinedTextField(
                         q, { typed = it },
-                        placeholder = { Text("Brand or model") },
+                        placeholder = { Text(tr("Brand or model", "品牌或型号")) },
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                         trailingIcon = {
-                            if (q.isNotEmpty()) IconButton(onClick = { typed = "" }) { Icon(Icons.Filled.Clear, contentDescription = "Clear search") }
+                            if (q.isNotEmpty()) IconButton(onClick = { typed = "" }) { Icon(Icons.Filled.Clear, contentDescription = tr("Clear search", "清除搜索")) }
                         },
                         singleLine = true,
                         // The keyboard's action key closes it, and moves on once a TV is picked.
@@ -222,7 +224,7 @@ fun DebloatScreen(
                     items(shown, key = { it.id }) { d -> ListRow(d, makers.getValue(d.id), d.id == marked) { marked = d.id } }
                     return@LazyColumn
                 }
-                if (missed != null) item { Muted("No list for \u201c$missed\u201d. Pick the closest model.") }
+                if (missed != null) item { Muted(tr("No list for \u201c$missed\u201d. Pick the closest model.", "没有「$missed」的清单。请选最接近的型号。")) }
                 // Only a connected TV can say which apps it came with.
                 if (missed != null && tv?.state == DeviceState.Online) item { HelpAddCard(onHelpAdd) }
                 // Every list, by maker, with the maker in view while scrolling.
@@ -244,7 +246,7 @@ fun DebloatScreen(
                 if (groups == null) {
                     item {
                         Muted(
-                            if (lists == Suggestions.Unavailable) "Couldn't load that list. Check the phone's internet and try again."
+                            if (lists == Suggestions.Unavailable) tr("Couldn't load that list. Check the phone's internet and try again.", "无法加载这份清单。请检查手机网络后重试。")
                             else "Loading the list…",
                         )
                     }
@@ -255,33 +257,33 @@ fun DebloatScreen(
                     val entry = showing?.let { r -> devices.firstOrNull { it.id == r.list.id } ?: devices.firstOrNull { squash(makers.getValue(it.id)) == squash(r.list.name) } }
                     val kind = entry?.let { listKind(it, makers.getValue(it.id)) } ?: tv?.let(::deviceKind) ?: DeviceKind.Tv
                     when {
-                        showing == null -> MatchCard(kind, tv?.let(::name) ?: "This TV", "No list for this TV or its maker yet", Match.None) { marked = null; searching = true }
-                        showing.byMaker -> MatchCard(kind, showing.list.name, "No list for this model, so these come from ${showing.list.name}'s other models", Match.Loose) { marked = null; searching = true }
-                        showing.sdkMatches -> MatchCard(kind, showing.list.name, "This model's list · tested on ${showing.list.testedOs ?: showing.sdk?.let(::androidName)}", Match.Exact) { marked = null; searching = true }
+                        showing == null -> MatchCard(kind, tv?.let(::name) ?: tr("This TV", "这台电视"), tr("No list for this TV or its maker yet", "还没有这台电视或这个厂商的清单"), Match.None) { marked = null; searching = true }
+                        showing.byMaker -> MatchCard(kind, showing.list.name, tr("No list for this model, so these come from ${showing.list.name}'s other models", "没有这个型号的清单，因此这些来自 ${showing.list.name} 的其他型号"), Match.Loose) { marked = null; searching = true }
+                        showing.sdkMatches -> MatchCard(kind, showing.list.name, tr("This model's list · tested on ${showing.list.testedOs ?: showing.sdk?.let(::androidName)}", "这个型号的清单 · 在 ${showing.list.testedOs ?: showing.sdk?.let(::androidName)} 上测试过"), Match.Exact) { marked = null; searching = true }
                         else -> MatchCard(
                             kind, showing.list.name,
-                            showing.list.testedOs?.let { "This model's list, tested on $it, not this TV's Android" }
-                                ?: "This model's list, with no Android it was tested on",
+                            showing.list.testedOs?.let { tr("This model's list, tested on $it, not this TV's Android", "这个型号的清单，在 $it 上测试过，不是这台电视的 Android") }
+                                ?: tr("This model's list, with no Android it was tested on", "这个型号的清单，没有记录测试过的 Android 版本"),
                             Match.Loose,
                         ) { marked = null; searching = true }
                     }
                     Text(
                         when {
-                            showing == null -> "Tick the apps to turn off. Apps the TV needs to run aren't shown."
-                            showing.sdkMatches && !showing.byMaker -> "These apps will be turned off. Untick any you use."
-                            else -> "Nothing is ticked: tick only the apps you know you don't use."
+                            showing == null -> tr("Tick the apps to turn off. Apps the TV needs to run aren't shown.", "勾选要关闭的应用。电视运行所需的应用不会显示。")
+                            showing.sdkMatches && !showing.byMaker -> tr("These apps will be turned off. Untick any you use.", "这些应用将被关闭。取消勾选你还在用的。")
+                            else -> tr("Nothing is ticked: tick only the apps you know you don't use.", "目前没有勾选：只勾选你确定不用的应用。")
                         } + " Nothing is deleted, and History can turn each one back on.",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(top = 12.dp),
                     )
                     // Nobody should debloat from a list they didn't mean to use.
                     if (source != null && showing != null) Text(
-                        "This list comes from ${sourceName(source)}, not tellyscope-devices.",
+                        tr("This list comes from ${sourceName(source)}, not tellyscope-devices.", "这份清单来自 ${sourceName(source)}，不是 tellyscope-devices。"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
                     if (groups.all { it.packages.isEmpty() }) {
-                        Muted(if (showing == null) "Every app left on is one the TV needs." else "Nothing on the list is still on here.")
+                        Muted(if (showing == null) tr("Every app left on is one the TV needs.", "仍开着的每个应用都是电视需要的。") else tr("Nothing on the list is still on here.", "清单上的应用在这里都已关闭。"))
                     }
                 }
                 // A list's groups are a tree: each heading ticks its whole group. The TV's own apps, with no list, stay flat.
@@ -306,7 +308,7 @@ fun DebloatScreen(
                             Column(Modifier.weight(1f)) {
                                 Text(p.label, style = MaterialTheme.typography.bodyLarge)
                                 Text(
-                                    listOfNotNull(p.pkg, p.note, "optional: tick it if you don't use it".takeIf { p.optional }).joinToString(" · "),
+                                    listOfNotNull(p.pkg, p.note, tr("optional: tick it if you don't use it", "可选：不用就勾选").takeIf { p.optional }).joinToString(" · "),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -376,12 +378,12 @@ private fun HelpAddCard(onHelpAdd: () -> Unit) {
             Icon(AddToQueue, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text("Not in the list? Help add this TV", style = MaterialTheme.typography.titleSmall)
+                Text(tr("Not in the list? Help add this TV", "清单里没有？帮助添加这台电视"), style = MaterialTheme.typography.titleSmall)
                 Text(
                     "Send its model and stock apps to cleanyourtv, where Tellyscope\u2019s lists come from. You see the text first.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                FilledTonalButton(onClick = onHelpAdd, modifier = Modifier.align(Alignment.End).padding(top = 8.dp)) { Text("Help add this TV") }
+                FilledTonalButton(onClick = onHelpAdd, modifier = Modifier.align(Alignment.End).padding(top = 8.dp)) { Text(tr("Help add this TV", "帮助添加这台电视")) }
             }
         }
     }
@@ -407,7 +409,7 @@ private fun MatchCard(kind: DeviceKind, name: String, detail: String, match: Mat
                 Text(name, style = MaterialTheme.typography.titleMedium)
                 Text(detail, style = MaterialTheme.typography.bodySmall)
             }
-            TextButton(onClick = onNotThis) { Text("Not this TV?") }
+            TextButton(onClick = onNotThis) { Text(tr("Not this TV?", "不是这台电视？")) }
         }
     }
 }
@@ -416,11 +418,11 @@ private fun MatchCard(kind: DeviceKind, name: String, detail: String, match: Mat
 internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismiss: () -> Unit, enabled: Boolean = true) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Disable ${apps.size} ${if (apps.size == 1) "app" else "apps"}?") },
+        title = { Text(tr("Disable ${apps.size} ${if (apps.size == 1) "app" else "apps"}?", "停用 ${apps.size} 个应用？")) },
         text = {
             // Every name, so a list can't slip something in behind a count.
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Each one is hidden and stops running. Nothing is deleted; every one shows in History, where you can turn it back on.")
+                Text(tr("Each one is hidden and stops running. Nothing is deleted; every one shows in History, where you can turn it back on.", "每一个都会被隐藏并停止运行。不会删除任何内容；它们都会出现在历史记录里，可以在那里重新启用。"))
                 LazyColumn(Modifier.heightIn(max = 280.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(apps, key = { it.pkg }) { a ->
                         Column {
@@ -431,8 +433,8 @@ internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismi
                 }
             }
         },
-        confirmButton = { Button(onClick = onDisable, enabled = enabled) { Text("Yes, disable them") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(onClick = onDisable, enabled = enabled) { Text(tr("Yes, disable them", "确定停用")) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel", "取消")) } },
     )
 }
 
@@ -455,26 +457,33 @@ fun AboutDialog(commit: String?, onDismiss: () -> Unit, version: String = instal
     val browser = LocalUriHandler.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("About Tellyscope") },
+        title = { Text(tr("About Tellyscope", "关于 Tellyscope")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Version $version", style = MaterialTheme.typography.titleSmall)
-                AboutLink("Website", SITE, browser::openUri)
+                Text(tr("Version $version", "版本 $version"), style = MaterialTheme.typography.titleSmall)
+                AboutLink(tr("Website", "网站"), SITE, browser::openUri)
                 AboutLink("GitHub", REPO, browser::openUri)
-                AboutLink("Watch the demo on YouTube", DEMO_VIDEO, browser::openUri)
-                Text("Free software under the GNU GPL v3.", style = MaterialTheme.typography.bodyMedium)
+                AboutLink(tr("Watch the demo on YouTube", "在 YouTube 上看演示"), DEMO_VIDEO, browser::openUri)
+                Text(tr("Free software under the GNU GPL v3.", "基于 GNU GPL v3 的自由软件。"), style = MaterialTheme.typography.bodyMedium)
                 Text(
-                    "Device lists are adapted from cleanyourtv by Gathin (MIT licence), " +
-                        (commit?.let { "commit ${it.take(12)}." } ?: "once they have downloaded."),
+                    tr(
+                        "Device lists are adapted from cleanyourtv by Gathin (MIT licence), " +
+                            (commit?.let { "commit ${it.take(12)}." } ?: "once they have downloaded."),
+                        "设备清单改编自 Gathin 的 cleanyourtv（MIT 许可），" +
+                            (commit?.let { "提交 ${it.take(12)}。" } ?: "下载后才会有。"),
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    "Uses Kadb (Apache 2.0) and spake2-java (GPL v3). Full licence texts are in the NOTICE file.",
+                    tr(
+                        "Uses Kadb (Apache 2.0) and spake2-java (GPL v3). Full licence texts are in the NOTICE file.",
+                        "使用了 Kadb（Apache 2.0）和 spake2-java（GPL v3）。完整许可文本在 NOTICE 文件中。",
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Close", "关闭")) } },
     )
 }
 

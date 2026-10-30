@@ -33,6 +33,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import app.tellyscope.R
+import app.tellyscope.adb.tr
 import app.tellyscope.ui.theme.SmallNumber
 
 /**
@@ -48,8 +49,8 @@ fun WelcomeScreen(askLocalNetwork: Boolean, onContinue: () -> Unit, onSkip: () -
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onSkip) { Text("Skip") }
-                Button(onClick = onContinue) { Text("Continue") }
+                TextButton(onClick = onSkip) { Text(tr("Skip", "跳过")) }
+                Button(onClick = onContinue) { Text(tr("Continue", "继续")) }
             }
         },
     ) { pad ->
@@ -65,9 +66,12 @@ fun WelcomeScreen(askLocalNetwork: Boolean, onContinue: () -> Unit, onSkip: () -
                 // The foreground keeps its art inside the adaptive-icon safe zone; oversize it so the art fills the tile.
                 Image(painterResource(R.drawable.ic_launcher_foreground), contentDescription = null, Modifier.requiredSize(108.dp))
             }
-            Text("Welcome to Tellyscope", style = MaterialTheme.typography.headlineMedium)
+            Text(tr("Welcome to Tellyscope", "欢迎使用 Tellyscope"), style = MaterialTheme.typography.headlineMedium)
             Text(
-                "See what's running on your Android TV, and turn off the apps you don't need. All from your phone, over Wi-Fi.",
+                tr(
+                    "See what's running on your Android TV, and turn off the apps you don't need. All from your phone, over Wi-Fi.",
+                    "查看 Android 电视上正在运行的内容，并关掉你不需要的应用。全部在手机上通过 Wi-Fi 完成。",
+                ),
                 style = MaterialTheme.typography.bodyLarge,
             )
             Card(
@@ -86,7 +90,10 @@ fun WelcomeScreen(askLocalNetwork: Boolean, onContinue: () -> Unit, onSkip: () -
             }
             if (askLocalNetwork) {
                 Text(
-                    "Android asks before an app talks to other devices on your Wi-Fi. Tellyscope only connects to the TVs you pick.",
+                    tr(
+                        tr("Android asks before an app talks to other devices on your Wi-Fi. Tellyscope only connects to the TVs you pick.", "应用要和其他 Wi-Fi 设备通信时，Android 会先询问。Tellyscope 只连接你选中的电视。"),
+                        "应用要和其他 Wi-Fi 设备通信时，Android 会先询问。Tellyscope 只连接你选中的电视。",
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -95,8 +102,8 @@ fun WelcomeScreen(askLocalNetwork: Boolean, onContinue: () -> Unit, onSkip: () -
     }
 }
 
-private val steps = listOf(
-    "Turn on debugging on your TV. The next screen shows how for your brand.",
-    "Tellyscope finds the TV on your Wi-Fi.",
-    "Type the code the TV shows, or choose Allow when it asks.",
+private val steps get() = listOf(
+    tr("Turn on debugging on your TV. The next screen shows how for your brand.", "在电视上打开调试。下一页会按品牌说明怎么做。"),
+    tr("Tellyscope finds the TV on your Wi-Fi.", "Tellyscope 会在 Wi-Fi 上找到电视。"),
+    tr("Type the code the TV shows, or choose Allow when it asks.", "输入电视上显示的配对码，或在它询问时选择允许。"),
 )

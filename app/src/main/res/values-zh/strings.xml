@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scan_rescan">重新扫描</string>
+    <string name="scan_none_yet_in">还没有找到电视。%1$d 秒后再次查找</string>
+</resources>

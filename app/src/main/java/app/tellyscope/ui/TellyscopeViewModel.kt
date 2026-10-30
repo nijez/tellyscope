@@ -21,6 +21,7 @@ import app.tellyscope.adb.TvFacts
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.adb.Tweak
+import app.tellyscope.adb.tr
 import app.tellyscope.adb.installKind
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
@@ -623,7 +624,10 @@ class TellyscopeViewModel(
                 is ConnectResult.WrongCode -> setRow(hit.ip, row.copy(busy = false, error = Copy.WRONG_CODE, detail = r.message))
                 is ConnectResult.Unreachable -> setRow(hit.ip, row.copy(busy = false, error = Copy.UNREACHABLE, detail = r.message))
                 ConnectResult.NotAllowed -> setRow(hit.ip, row.copy(busy = false, error = Copy.PAIR_INSTEAD))
-                ConnectResult.NeedsPairing -> setRow(hit.ip, row.copy(busy = false, error = "The TV still wants a code. Check the number on screen and try again."))
+                ConnectResult.NeedsPairing -> setRow(
+                    hit.ip,
+                    row.copy(busy = false, error = tr("The TV still wants a code. Check the number on screen and try again.", "电视仍需要配对码。请核对屏幕上的数字后重试。")),
+                )
             }
         }
     }
@@ -631,9 +635,15 @@ class TellyscopeViewModel(
     /** "Add by IP": `ip` or `ip:port`. Returns an error line, or null when the connect started. */
     fun addByIp(text: String): String? {
         val m = Regex("""^(\d{1,3}(?:\.\d{1,3}){3})(?::(\d{1,5}))?$""").find(text.trim())
-            ?: return "That doesn't look like an IP address. It should look like four numbers with dots, like the one in your TV's network settings."
+            ?: return tr(
+                "That doesn't look like an IP address. It should look like four numbers with dots, like the one in your TV's network settings.",
+                "这看起来不是 IP 地址。它应该是用点分开的四段数字，和电视网络设置里的一样。",
+            )
         val port = m.groupValues[2].toIntOrNull() ?: 5555
-        if (port !in 1..65535) return "The port after the colon should be a number from 1 to 65535, like 5555."
+        if (port !in 1..65535) return tr(
+            "The port after the colon should be a number from 1 to 65535, like 5555.",
+            "冒号后面的端口应是 1 到 65535 的数字，例如 5555。",
+        )
         val kind = if (port == 5555) app.tellyscope.data.ScanKind.Classic else app.tellyscope.data.ScanKind.Wireless
         val hit = ScanHit(m.groupValues[1], port, kind, null, null)
         _state.update { s ->
@@ -827,7 +837,7 @@ class TellyscopeViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: "That didn't work."
+                _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: tr("That didn't work.", "没有成功。")
                 rereadAfterFailure(id)
                 return@launch
             }
@@ -1142,7 +1152,7 @@ class TellyscopeViewModel(
                 val history = source.history(id)
                 updateDevice(id) { it.copy(busy = null, history = history) }
                 undoing?.let(undoInFlight::remove) // a failed Undo can be tried again
-                _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: "That didn't work."
+                _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: tr("That didn't work.", "没有成功。")
                 return@launch
             }
             val history = source.history(id)
@@ -1160,7 +1170,7 @@ class TellyscopeViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                e.message?.replaceFirstChar(Char::uppercase) ?: "That didn't work."
+                e.message?.replaceFirstChar(Char::uppercase) ?: tr("That didn't work.", "没有成功。")
             }
             val history = source.history(id)
             updateDevice(id) { it.copy(busy = null, history = history) }
@@ -1213,7 +1223,7 @@ class TellyscopeViewModel(
                 undoing?.let(undoInFlight::remove) // a failed Undo can be tried again
                 // A reset's Undo can get partway, so History shows where it ended.
                 if (undoing != null) runCatching { source.history(id) }.getOrNull()?.let { h -> updateDevice(id) { it.copy(history = h) } }
-                _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: "That didn't work."
+                _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: tr("That didn't work.", "没有成功。")
                 rereadAfterFailure(id)
                 return@launch
             }
@@ -1295,7 +1305,7 @@ class TellyscopeViewModel(
      */
     fun openReport(kind: ReportKind, details: String = "", said: String? = null) {
         val tv = _state.value.selected?.takeIf { it.state == DeviceState.Online }
-        val log = synchronized(sessionLog) { sessionLog.toList() } + listOfNotNull(said?.let { "The TV said: $it" })
+        val log = synchronized(sessionLog) { sessionLog.toList() } + listOfNotNull(said?.let { tr("The TV said: $it", "电视说：$it") })
         val connection = when (tv?.hit?.kind) {
             ScanKind.Classic -> Reports.Connection.PORT_5555
             ScanKind.Wireless -> Reports.Connection.WIRELESS_DEBUGGING
@@ -1455,11 +1465,12 @@ class TellyscopeViewModel(
         viewModelScope.launch {
             _notice.value = try {
                 val n = source.restoreAll(id).size
-                if (n == 0) "Nothing to turn back on." else "Turned $n ${if (n == 1) "app" else "apps"} back on."
+                if (n == 0) tr("Nothing to turn back on.", "没有需要重新启用的应用。")
+                else tr("Turned $n ${if (n == 1) "app" else "apps"} back on.", "已重新启用 $n 个应用。")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                e.message?.replaceFirstChar(Char::uppercase) ?: "That didn't work."
+                e.message?.replaceFirstChar(Char::uppercase) ?: tr("That didn't work.", "没有成功。")
             }
             val apps = runCatching { source.apps(id) }.getOrNull()
             val history = source.history(id)
@@ -1729,7 +1740,7 @@ class TellyscopeViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: "That didn't work."
+                _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: tr("That didn't work.", "没有成功。")
                 return@launch
             }
             val now = source.listSource()
@@ -1905,7 +1916,7 @@ class TellyscopeViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                ResetUi(error = e.message?.replaceFirstChar(Char::uppercase) ?: "The TV didn't answer.")
+                ResetUi(error = e.message?.replaceFirstChar(Char::uppercase) ?: tr("The TV didn't answer.", "电视没有响应。"))
             }
             updateDevice(id) { d -> d.copy(reset = d.reset?.let { ui }) }
         }

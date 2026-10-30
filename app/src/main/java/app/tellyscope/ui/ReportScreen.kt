@@ -3,6 +3,9 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.simplifiedChinese
+import app.tellyscope.adb.tr
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -97,29 +100,29 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
             TopAppBar(
                 title = {
                     Column {
-                        Text(if (newTv) "Help add this TV" else "Report a problem")
+                        Text(if (newTv) tr("Help add this TV", "帮助添加这台电视") else tr("Report a problem", "报告问题"))
                         Text(
-                            if (newTv) "Opens cleanyourtv’s “My TV” form on GitHub" else "Opens an issue on Tellyscope’s GitHub",
+                            if (newTv) tr("Opens cleanyourtv’s “My TV” form on GitHub", "在 GitHub 上打开 cleanyourtv 的 “My TV” 表单") else tr("Opens an issue on Tellyscope’s GitHub", "在 Tellyscope 的 GitHub 上开一个 issue"),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 },
-                navigationIcon = { IconButton(onClick = close) { Icon(Icons.Default.Close, contentDescription = "Close") } },
+                navigationIcon = { IconButton(onClick = close) { Icon(Icons.Default.Close, contentDescription = tr("Close", "关闭")) } },
             )
         },
         bottomBar = {
             if (posted == null) Actions(
-                note = "You post it from your own GitHub account. " + (
-                    report?.rest?.let { "What doesn’t fit the link can go in a comment after you post." }
-                        ?: "Tellyscope sends nothing by itself."
+                note = tr("You post it from your own GitHub account. ", "你会用自己的 GitHub 账号发布。") + (
+                    report?.rest?.let { tr("What doesn’t fit the link can go in a comment after you post.", "链接里放不下的内容，可以在发布后作为评论补上。") }
+                        ?: tr("Tellyscope sends nothing by itself.", "Tellyscope 不会自己发送任何内容。")
                     ),
                 cancel = close,
             ) {
                 Button(
                     onClick = { report?.let { runCatching { browser.openUri(it.link) }; onOpened(it) } },
                     enabled = report != null,
-                ) { ButtonIcon(OpenInNew); Text("Open GitHub") }
+                ) { ButtonIcon(OpenInNew); Text(tr("Open GitHub", "打开 GitHub")) }
             }
         },
     ) { pad ->
@@ -134,34 +137,41 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
             // Read from the TV, so shown as facts rather than fields to edit.
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                 val tv = r.tv
-                val reading = if (r.reading) "Reading the TV…" else "No TV connected"
-                Fact(if (newTv) "TV model" else "TV", tv?.name ?: reading)
+                val reading = if (r.reading) tr("Reading the TV…", "正在读取电视…") else tr("No TV connected", "没有连接电视")
+                Fact(if (newTv) tr("TV model", "电视型号") else tr("TV", "电视"), tv?.name ?: reading)
                 HorizontalDivider(color = MaterialTheme.colorScheme.surface)
-                Fact("Android version and firmware build", tv?.android ?: reading)
+                Fact(tr("Android version and firmware build", "Android 版本和固件版本"), tv?.android ?: reading)
             }
             if (newTv) {
-                Choice("How far did you get?", stage, Reports.Stage.entries, { it.option }) { stage = it }
+                Choice(tr("How far did you get?", "你进行到哪一步？"), stage, Reports.Stage.entries, { it.label }) { stage = it }
             } else {
                 Choice(
-                    "How did you connect?", connection, Reports.Connection.entries, { it.option },
-                    help = "Filled in from this connection; change it if it’s wrong.",
+                    tr("How did you connect?", "你是怎么连接的？"), connection, Reports.Connection.entries, { it.label },
+                    help = tr("Filled in from this connection; change it if it’s wrong.", "已按这次连接填好；如果不对可以修改。"),
                 ) { connection = it }
-                Choice("What happened?", outcome, Reports.Outcome.entries, { it.option }) { outcome = it }
+                Choice(tr("What happened?", "发生了什么？"), outcome, Reports.Outcome.entries, { it.label }) { outcome = it }
             }
             OutlinedTextField(
                 details, { details = it },
-                label = { Text("Details (optional)") },
-                placeholder = { Text(if (newTv) "Anything else?" else "What were you doing?") },
+                label = { Text(tr("Details (optional)", "详情（可选）")) },
+                placeholder = { Text(if (newTv) tr("Anything else?", "还有别的吗？") else tr("What were you doing?", "你当时在做什么？")) },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text("What gets sent", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Text(tr("What gets sent", "将发送的内容"), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            if (simplifiedChinese()) {
+                Text(
+                    "提交到 GitHub 的正文保持英文，以便匹配问题模板。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (report == null) {
                 Text(
                     when {
-                        newTv && r.tv == null -> if (r.reading) "Reading the TV…" else "Connect the TV to list its apps."
-                        newTv -> "Pick how far you got to see the report."
-                        else -> "Pick what happened to see the report."
+                        newTv && r.tv == null -> if (r.reading) tr("Reading the TV…", "正在读取电视…") else tr("Connect the TV to list its apps.", "连接电视后即可列出它的应用。")
+                        newTv -> tr("Pick how far you got to see the report.", "选择你进行到哪一步，即可看到报告。")
+                        else -> tr("Pick what happened to see the report.", "选择发生了什么，即可看到报告。")
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -187,7 +197,7 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
             TopAppBar(
                 title = {
                     Column {
-                        Text("Add the rest")
+                        Text(tr("Add the rest", "补上其余内容"))
                         Text(
                             "As a comment on your newest issue on ${posted.repo.substringAfter('/')}",
                             style = MaterialTheme.typography.bodyMedium,
@@ -195,7 +205,7 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
                         )
                     }
                 },
-                navigationIcon = { IconButton(onClick = back) { Icon(Icons.Default.Close, contentDescription = "Close") } },
+                navigationIcon = { IconButton(onClick = back) { Icon(Icons.Default.Close, contentDescription = tr("Close", "关闭")) } },
             )
         },
         bottomBar = {
@@ -207,7 +217,7 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
                     clipboard.setText(AnnotatedString(rest))
                     runCatching { browser.openUri(posted.myIssues) }
                     done()
-                }) { ButtonIcon(CopyIcon); Text("Copy and open your issue") }
+                }) { ButtonIcon(CopyIcon); Text(tr("Copy and open your issue", "复制并打开你的 issue")) }
             }
         },
     ) { pad ->
@@ -232,15 +242,15 @@ private fun PostedCard(posted: Report, notNow: () -> Unit, addRest: () -> Unit) 
     val lines = posted.rest.orEmpty().lines().size - 1
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Posted it? Add the rest as a comment", style = MaterialTheme.typography.titleMedium)
+            Text(tr("Posted it? Add the rest as a comment", "已经发布？把其余内容作为评论补上"), style = MaterialTheme.typography.titleMedium)
             Text(
                 if (posted.repo == Reports.CLEANYOURTV) "$lines apps didn’t fit in the link. Adding them helps cleanyourtv write the full list."
-                else "Part of the report didn’t fit in the link. Adding it helps us find the problem.",
+                else tr("Part of the report didn’t fit in the link. Adding it helps us find the problem.", "报告有一部分没能放进链接。补上它有助于定位问题。"),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                TextButton(onClick = notNow) { Text("Not now") }
-                Button(onClick = addRest) { Text("Add the rest") }
+                TextButton(onClick = notNow) { Text(tr("Not now", "暂时不要")) }
+                Button(onClick = addRest) { Text(tr("Add the rest", "补上其余内容")) }
             }
         }
     }
@@ -260,7 +270,7 @@ private fun <T> Choice(label: String, value: T?, options: List<T>, text: (T) -> 
     var open by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(open, onExpandedChange = { open = it }) {
         OutlinedTextField(
-            value?.let(text) ?: "Choose one", {},
+            value?.let(text) ?: tr("Choose one", "请选择"), {},
             readOnly = true,
             label = { Text(label) },
             supportingText = help?.let { { Text(it) } },
@@ -290,7 +300,7 @@ private fun Removed() = Row(verticalAlignment = Alignment.CenterVertically) {
     Icon(Icons.Default.Lock, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
     Spacer(Modifier.width(8.dp))
     Text(
-        "Removed first: serial numbers, IP addresses, ADB keys and fingerprints.",
+        tr("Removed first: serial numbers, IP addresses, ADB keys and fingerprints.", "会先去掉：序列号、IP 地址、ADB 密钥和指纹。"),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -303,7 +313,7 @@ private fun Actions(note: String, cancel: () -> Unit, action: @Composable () -> 
         Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                TextButton(onClick = cancel) { Text("Cancel") }
+                TextButton(onClick = cancel) { Text(tr("Cancel", "取消")) }
                 action()
             }
         }

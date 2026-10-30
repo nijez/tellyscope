@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -95,7 +97,7 @@ fun ResetScreen(state: UiState, actions: ResetActions) {
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = actions.back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to the TV's page") }
+                    IconButton(onClick = actions.back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Back to the TV's page", "返回电视页面")) }
                 },
             )
         },
@@ -105,14 +107,14 @@ fun ResetScreen(state: UiState, actions: ResetActions) {
                     plan == null || (plan.changes == 0 && !ui.ran) -> Unit
                     ui.running != null -> Button(onClick = {}, enabled = false) { Text(Copy.RESETTING) }
                     ui.ran -> {
-                        if (ui.failed.isEmpty()) Button(onClick = actions.back) { Text("Done") }
+                        if (ui.failed.isEmpty()) Button(onClick = actions.back) { Text(tr("Done", "完成")) }
                         else {
-                            TextButton(onClick = actions.back) { Text("Done") }
+                            TextButton(onClick = actions.back) { Text(tr("Done", "完成")) }
                             Button(onClick = actions.retry) { Text(Copy.tryAgain(ui.failed.singleOrNull()?.app?.label)) }
                         }
                     }
                     else -> {
-                        TextButton(onClick = actions.back) { Text("Cancel") }
+                        TextButton(onClick = actions.back) { Text(tr("Cancel", "取消")) }
                         Button(onClick = actions.reset) { Text(Copy.RESET_BUTTON) }
                     }
                 }
@@ -122,13 +124,13 @@ fun ResetScreen(state: UiState, actions: ResetActions) {
         Box(Modifier.fillMaxSize().padding(pad)) {
             when {
                 ui.error != null -> Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    EmptyState(Icons.Default.Warning, "Couldn't read the TV", ui.error)
-                    TextButton(onClick = actions.reload) { Text("Try again") }
+                    EmptyState(Icons.Default.Warning, tr("Couldn't read the TV", "无法读取电视"), ui.error)
+                    TextButton(onClick = actions.reload) { Text(tr("Try again", "重试")) }
                 }
                 plan == null -> Column(Modifier.fillMaxWidth().padding(top = 96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     LoadingIndicator(Modifier.size(48.dp))
                     Spacer(Modifier.height(16.dp))
-                    Text("Reading the TV…", style = MaterialTheme.typography.titleSmall)
+                    Text(tr("Reading the TV…", "正在读取电视…"), style = MaterialTheme.typography.titleSmall)
                 }
                 // Try again runs on this screen too, so a run in progress comes before the last run's result.
                 ui.running == null && ui.ran -> Result(plan, ui.failed)
@@ -226,10 +228,10 @@ private fun Section(plan: ResetPlan, part: ResetPart, status: Status?) {
             }
             Spacer(Modifier.width(16.dp))
             when (status) {
-                null -> Icon(if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = if (open) "Hide the list" else "Show the list")
+                null -> Icon(if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = if (open) tr("Hide the list", "收起列表") else tr("Show the list", "展开列表"))
                 Status.Running -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                Status.Waiting -> Icon(ResetIcons.Waiting, contentDescription = "Waiting", tint = c.onSurfaceVariant)
-                Status.Done -> Icon(HistoryIcons.TurnedOn, contentDescription = "Done", tint = c.primary)
+                Status.Waiting -> Icon(ResetIcons.Waiting, contentDescription = tr("Waiting", "等待中"), tint = c.onSurfaceVariant)
+                Status.Done -> Icon(HistoryIcons.TurnedOn, contentDescription = tr("Done", "完成"), tint = c.primary)
             }
         }
         if (open && status == null) {
@@ -334,7 +336,7 @@ internal object ResetIcons {
     // Material's download and schedule (a ring cut out by even-odd, hands inside). Absolute commands only, as in TileIcons.
     val BringBack = icon("BringBack", "M5 20H19V18H5ZM19 9H15V3H9V9H5L12 16Z")
     val Waiting = icon(
-        "Waiting",
+        tr("Waiting", "等待中"),
         "M12 2A10 10 0 1 0 12 22A10 10 0 1 0 12 2ZM12 4A8 8 0 1 1 12 20A8 8 0 1 1 12 4Z" +
             "M12.5 7H11V13L16.25 16.15L17 14.92L12.5 12.25Z",
     )

@@ -113,36 +113,42 @@ class Actions(private val shell: AdbShell) {
         val from = currentHome() ?: stockHome() ?: return firstHome(pkg)
         val old = from.substringBefore('/')
         // With no default home, the TV's own launcher can be made the default too.
-        if (old == pkg) return if (currentHome() == null) firstHome(pkg) else HomeResult.Failed("it's already the home screen")
+        if (old == pkg) return if (currentHome() == null) firstHome(pkg) else HomeResult.Failed(tr("it's already the home screen", "它已经是主屏幕"))
         val homes = shell.shell(Commands.HOME_ACTIVITIES).output
-        val to = launchersIn(homes)[pkg] ?: return HomeResult.Failed("it has no home screen")
+        val to = launchersIn(homes)[pkg] ?: return HomeResult.Failed(tr("it has no home screen", "它没有主屏幕"))
         // The old launcher is protected as the home screen and by name; once it isn't Home, that
         // guard has done its job. Any other reason still stands.
         Protected.reason(old)?.takeIf { it != ProtectedReason.HOME_SCREEN }?.let { return HomeResult.Refused(it) }
         if (old in userPackages()) {
             if (setHome(to)) return HomeResult.Switched(from, to, kept = true)
             setHome(from)
-            return HomeResult.Failed("the TV kept the home screen it has")
+            return HomeResult.Failed(tr("the TV kept the home screen it has", "电视仍保持现在的主屏幕"))
         }
         val checked = setHome(to)
         val priority = prioritiesIn(homes)
         if (!checked && (priority[old] ?: 0) <= (priority[pkg] ?: 0)) {
             setHome(from)
-            return HomeResult.Failed("the TV kept its own home screen, so nothing was turned off")
+            return HomeResult.Failed(tr("the TV kept its own home screen, so nothing was turned off", "电视仍使用自带的主屏幕，因此没有关闭任何内容"))
         }
         require(PACKAGE.matches(old)) { "not a package name: $old" } // read from the TV, and it goes into a shell line
         val off = exec("pm disable-user --user 0 $old", undo = null) { "disabled-user" in it }
         if (off is ActionResult.Failed) {
             setHome(from)
-            return HomeResult.Failed("the TV wouldn't turn the old home screen off, so nothing changed", off.output)
+            return HomeResult.Failed(tr("the TV wouldn't turn the old home screen off, so nothing changed", "电视不肯关闭原来的主屏幕，因此没有更改"), off.output)
         }
         if (checked || setHome(to)) return HomeResult.Switched(from, to)
         val on = exec("pm enable --user 0 $old", undo = null) { "enabled" in it }
         setHome(from)
         if (on is ActionResult.Failed) {
-            return HomeResult.Failed("Home didn't open it, and the old home screen didn't turn back on. Turn it back on from Apps → Built-in", on.output)
+            return HomeResult.Failed(
+                tr(
+                    "Home didn't open it, and the old home screen didn't turn back on. Turn it back on from Apps → Built-in",
+                    "主页键没有打开它，原来的主屏幕也没有重新启用。请到 应用 → 系统自带 里重新启用",
+                ),
+                on.output,
+            )
         }
-        return HomeResult.Failed("Home still didn't open it, so the old home screen was turned back on")
+        return HomeResult.Failed(tr("Home still didn't open it, so the old home screen was turned back on", "主页键仍没有打开它，因此原来的主屏幕已重新启用"))
     }
 
     /**
@@ -154,13 +160,13 @@ class Actions(private val shell: AdbShell) {
         require(PACKAGE.matches(pkg)) { "not a package name: $pkg" }
         require(activity == null || (ACTIVITY.matches(activity) && activity.substringBefore('/') == pkg)) { "not $pkg's activity: $activity" }
         val from = currentHome() ?: return HomeResult.Refused(ProtectedReason.UNKNOWN_HOME)
-        if (from.substringBefore('/') == pkg) return HomeResult.Failed("it's already the home screen")
+        if (from.substringBefore('/') == pkg) return HomeResult.Failed(tr("it's already the home screen", "它已经是主屏幕"))
         val on = exec("pm enable --user 0 $pkg", undo = null) { "enabled" in it }
-        if (on is ActionResult.Failed) return HomeResult.Failed("the TV wouldn't turn it back on", on.output)
-        val to = activity ?: launchers()[pkg] ?: return HomeResult.Failed("it has no home screen")
+        if (on is ActionResult.Failed) return HomeResult.Failed(tr("the TV wouldn't turn it back on", "电视不肯重新启用它"), on.output)
+        val to = activity ?: launchers()[pkg] ?: return HomeResult.Failed(tr("it has no home screen", "它没有主屏幕"))
         if (!setHome(to)) {
             setHome(from)
-            return HomeResult.Failed("the TV kept the home screen it has")
+            return HomeResult.Failed(tr("the TV kept the home screen it has", "电视仍保持现在的主屏幕"))
         }
         return HomeResult.Switched(from, to)
     }
@@ -229,7 +235,7 @@ class Actions(private val shell: AdbShell) {
     /** No default home and no launcher of the TV's own on: sets [pkg] as Home, with nothing to turn off. */
     private suspend fun firstHome(pkg: String): HomeResult {
         val to = launchers()[pkg] ?: return HomeResult.Refused(ProtectedReason.UNKNOWN_HOME)
-        if (!setHome(to)) return HomeResult.Failed("the TV still asks which home screen to use")
+        if (!setHome(to)) return HomeResult.Failed(tr("the TV still asks which home screen to use", "电视仍在询问使用哪个主屏幕"))
         return HomeResult.Switched(null, to)
     }
 
@@ -245,8 +251,11 @@ class Actions(private val shell: AdbShell) {
         val stop = old?.takeIf { it != to.substringBefore('/') }?.let { exec("am force-stop $it", undo = null) }
         val open = shell.shell("${Commands.OPEN_HOME} '$to' 2>&1")
         return when {
-            open.exitCode != 0 || "Error" in open.output -> HandOffFailed("it didn't open, so press Home on the remote to go there", open.output.trim())
-            stop is ActionResult.Failed -> HandOffFailed("the old home screen didn't close", stop.output)
+            open.exitCode != 0 || "Error" in open.output -> HandOffFailed(
+                tr("it didn't open, so press Home on the remote to go there", "它没有打开，请按遥控器上的主页键进入"),
+                open.output.trim(),
+            )
+            stop is ActionResult.Failed -> HandOffFailed(tr("the old home screen didn't close", "原来的主屏幕没有关闭"), stop.output)
             else -> null
         }
     }

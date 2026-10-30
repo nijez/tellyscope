@@ -20,6 +20,7 @@ import app.tellyscope.adb.Sideload
 import app.tellyscope.adb.TvFacts
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
+import app.tellyscope.adb.tr
 import app.tellyscope.adb.Actions
 import app.tellyscope.adb.AdbSession
 import app.tellyscope.adb.ConnectionPrompt
@@ -476,7 +477,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
 
     /** An app's name for a uid; system uids and unknown ones read as Android system. */
     private fun uidLabel(uid: Int, packages: Map<Int, List<String>>): String {
-        val pkg = packages[uid]?.takeIf { uid % 100_000 >= 10_000 }?.firstOrNull() ?: return AppNames.SYSTEM
+        val pkg = packages[uid]?.takeIf { uid % 100_000 >= 10_000 }?.firstOrNull() ?: return tr(AppNames.SYSTEM, "Android 系统")
         return labels[pkg] ?: AppNames.fallback(pkg)
     }
 
@@ -492,7 +493,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         val actions = Actions(session(deviceId))
         val label = labels[packageName] ?: AppNames.fallback(packageName)
         val service = packageName.takeIf { it in serviceLaunchers }?.let { actions.homeService(it) }
-            ?: throw IllegalStateException("$label has no accessibility service")
+            ?: throw IllegalStateException(tr("$label has no accessibility service", "$label 没有无障碍服务"))
         if (!actions.grant(service)) throw IllegalStateException(serviceNotOn(label))
         // Undo of the switch to it turns it off again, as if the switch had turned it on.
         openSwitch(deviceId, packageName)?.let { book.amend(it, mapOf("service" to service)) }
@@ -520,7 +521,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
             return switchHome(deviceId, packageName, undoing, again ?: service)
         }
         if (action == Action.HomeBack) return homeBack(deviceId, packageName, undoing)
-        if (action == Action.Reset) return undoReset(deviceId, undoing ?: throw IllegalStateException("there's no reset to undo"))
+        if (action == Action.Reset) return undoReset(deviceId, undoing ?: throw IllegalStateException(tr("there's no reset to undo", "没有可撤销的恢复")))
         undoing?.let { id -> book.entries(key).firstOrNull { it.id == id } }?.firstHomeService
             ?.let { return firstHomeServiceOff(deviceId, packageName, it, undoing) }
         if (action == Action.Uninstall && Actions(shell).homeOptions()?.current == packageName) return uninstallHome(deviceId, packageName)
@@ -576,7 +577,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
             // A sentence of its own, like a setting's: nothing here for Restore or a later Undo.
             action = Action.Change,
             packageName = launcher,
-            label = "Turned off $label's accessibility service",
+            label = tr("Turned off $label's accessibility service", "已关闭 $label 的无障碍服务"),
             undo = null,
             undoing = undoing,
         )
@@ -601,7 +602,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         val shell = session(deviceId)
         val system = Parsers.packages(shell.shell("pm list packages -s").output).map { it.name }.toSet()
         val disabled = Parsers.packages(shell.shell("pm list packages -d").output).map { it.name }.toSet()
-        val nothing = "there's no home screen to switch back to"
+        val nothing = tr("there's no home screen to switch back to", "没有可以切回去的主屏幕")
         if (fireOs(deviceId, FIRE_TV_LAUNCHER in system)) Actions(shell).fireServiceHolder(serviceLaunchers)?.let { held ->
             val (added, _) = held
             // Reverses the Make Home that turned the service on, so Restore leaves it alone.
@@ -638,7 +639,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
                 }
             }
             is HomeResult.Refused -> throw IllegalStateException(reasonText(r.reason))
-            is HomeResult.Failed -> throw ActionFailed(r.output.ifEmpty { "the TV refused" }, r.details)
+            is HomeResult.Failed -> throw ActionFailed(r.output.ifEmpty { tr("the TV refused", "电视拒绝了") }, r.details)
         }
     }
 
@@ -725,7 +726,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
                 throw e
             } catch (e: Exception) {
                 // A step that fails doesn't stop the rest: each one stands alone.
-                failed += ResetFailure(part, app, e.message ?: "the TV refused")
+                failed += ResetFailure(part, app, e.message ?: tr("the TV refused", "电视拒绝了"))
                 null
             }
         }
@@ -741,7 +742,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                failed += ResetFailure(ResetPart.Home, null, e.message ?: "the TV refused")
+                failed += ResetFailure(ResetPart.Home, null, e.message ?: tr("the TV refused", "电视拒绝了"))
                 null
             }
         }
@@ -774,7 +775,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         else when (val r = actions.homeBack(home.to)) {
             is HomeResult.Switched -> listOfNotNull(ResetRecord.FROM to r.from, ResetRecord.TO to r.to).toMap()
             is HomeResult.Refused -> throw IllegalStateException(reasonText(r.reason))
-            is HomeResult.Failed -> throw IllegalStateException(r.output.ifEmpty { "the TV refused" })
+            is HomeResult.Failed -> throw IllegalStateException(r.output.ifEmpty { tr("the TV refused", "电视拒绝了") })
         }
         val service = home.from.takeIf { it in serviceLaunchers }?.let { actions.homeService(it) }?.takeIf { actions.serviceOn(it) }
         val off = service?.let { actions.setService(it, false) }
@@ -793,7 +794,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     private suspend fun undoReset(deviceId: String, id: Long): HistoryEntry {
         val key = key(deviceId)
         val entry = book.entries(key).firstOrNull { it.id == id && it.undoneAt == null }
-            ?: throw IllegalStateException("that reset is already undone")
+            ?: throw IllegalStateException(tr("that reset is already undone", "这次恢复已经撤销过了"))
         val p = entry.previous.orEmpty()
         val shell = session(deviceId)
         val tv = TvReset(shell)
@@ -806,7 +807,10 @@ class AdbDeviceSource(context: Context) : DeviceSource {
             // Home first: the TV's own launcher can't go off while it's still Home.
             if (from == null || !actions.setHome(from)) {
                 homeLeft = true
-                errors += "the TV kept ${labelOf(to.substringBefore('/'))} as the home screen"
+                errors += tr(
+                    "the TV kept ${labelOf(to.substringBefore('/'))} as the home screen",
+                    "电视仍把 ${labelOf(to.substringBefore('/'))} 作为主屏幕",
+                )
             } else p[ResetRecord.SERVICE]?.let { if (!actions.grant(it)) errors += serviceNotOn(name) }
         }
         if (undoFireResetHome(actions, p) == false) errors += serviceNotOn(labelOf(p[ResetRecord.SERVICE].orEmpty().substringBefore('/')))
@@ -819,7 +823,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                errors += "${labelOf(pkg)}: ${e.message ?: "the TV refused"}"
+                errors += "${labelOf(pkg)}: ${e.message ?: tr("the TV refused", "电视拒绝了")}"
                 true
             }
         }
@@ -827,16 +831,21 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         val back = each(ResetRecord.list(p, ResetRecord.BACK), tv::remove)
         // Only the service left on: every change is back, so the reset is undone, with a warning.
         if (errors.isEmpty() || (on.isEmpty() && back.isEmpty() && !homeLeft)) {
-            val undone = book.record(key, System.currentTimeMillis(), Action.Change, RESET, "Put back what Reset TV changed", undo = null, undoing = id)
+            val undone = book.record(key, System.currentTimeMillis(), Action.Change, RESET, tr("Put back what Reset TV changed", "已还原「恢复电视」的更改"), undo = null, undoing = id)
             if (errors.isEmpty()) return undone
-            throw IllegalStateException("put back every change, but ${errors.first()}")
+            throw IllegalStateException(tr("put back every change, but ${errors.first()}", "所有更改都已还原，但${errors.first()}"))
         }
         val left = mapOf(ResetRecord.ON to on.joinToString(","), ResetRecord.BACK to back.joinToString(",")) +
             if (homeLeft) emptyMap() else mapOf(ResetRecord.FROM to null, ResetRecord.TO to null, ResetRecord.SERVICE to null)
         val before = ResetRecord.changes(p)
         val now = ResetRecord.changes(p + left)
         book.amend(id, left, ResetRecord.label(now))
-        throw IllegalStateException("put back ${before - now} of $before changes. ${errors.first().replaceFirstChar(Char::uppercase)}. Undo again tries the rest")
+        throw IllegalStateException(
+            tr(
+                "put back ${before - now} of $before changes. ${errors.first().replaceFirstChar(Char::uppercase)}. Undo again tries the rest",
+                "已还原 $before 项中的 ${before - now} 项。${errors.first()}。再次撤销会尝试剩下的",
+            ),
+        )
     }
 
     override suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>): Suggestions = try {
@@ -870,9 +879,11 @@ class AdbDeviceSource(context: Context) : DeviceSource {
                 keep.clear() // the old source's keep entries
                 scope.launch(Dispatchers.IO) { SharedLists.load(lists, fresh = true) }
             }
-            SourceResult.NotHttps -> throw IllegalStateException("the address has to start with https://")
-            SourceResult.Unreachable -> throw IllegalStateException("couldn't reach that address. Check it and the phone's internet")
-            SourceResult.NotAList -> throw IllegalStateException(NOT_A_LIST)
+            SourceResult.NotHttps -> throw IllegalStateException(tr("the address has to start with https://", "地址必须以 https:// 开头"))
+            SourceResult.Unreachable -> throw IllegalStateException(
+                tr("couldn't reach that address. Check it and the phone's internet", "无法访问该地址。请检查地址和手机网络"),
+            )
+            SourceResult.NotAList -> throw IllegalStateException(tr(NOT_A_LIST, "这个地址不是 Tellyscope 清单"))
         }
     }
 
@@ -1142,40 +1153,50 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     }
 
     private fun tcpState(st: Int) = when (st) {
-        Parsers.TcpSocket.ESTABLISHED -> "established"
-        Parsers.TcpSocket.SYN_SENT, Parsers.TcpSocket.SYN_RECV -> "connecting"
-        else -> "closing"
+        Parsers.TcpSocket.ESTABLISHED -> tr("established", "已建立")
+        Parsers.TcpSocket.SYN_SENT, Parsers.TcpSocket.SYN_RECV -> tr("connecting", "正在连接")
+        else -> tr("closing", "正在关闭")
     }
 
-    private fun serviceStillOn(app: String) =
-        "$app's accessibility service is still on. Turn it off in the TV's Settings → Accessibility"
+    private fun serviceStillOn(app: String) = tr(
+        "$app's accessibility service is still on. Turn it off in the TV's Settings → Accessibility",
+        "$app 的无障碍服务仍开着。请到电视的 设置 → 无障碍 里关掉它",
+    )
 
-    private fun homeNotBack(app: String) =
-        "turned $app back on, but the TV kept the other home screen. Press Home on the remote to pick $app"
+    private fun homeNotBack(app: String) = tr(
+        "turned $app back on, but the TV kept the other home screen. Press Home on the remote to pick $app",
+        "已重新启用 $app，但电视仍使用另一个主屏幕。请按遥控器上的主页键选择 $app",
+    )
 
     /** Copy from the protected-apps table in the UX copy doc. */
     private fun reasonText(r: ProtectedReason) = when (r) {
-        ProtectedReason.HOME_SCREEN -> "this is your home screen"
-        ProtectedReason.SYSTEM -> "the TV needs this to work"
-        ProtectedReason.SETTINGS -> "you need this to change TV settings"
-        ProtectedReason.PLAY_SERVICES -> "most apps stop working without it"
-        ProtectedReason.KEYBOARD -> "you'd lose the on-screen keyboard"
-        ProtectedReason.TV_INPUTS_REMOTE -> "your remote or HDMI inputs could stop working"
-        ProtectedReason.SETUP_WIZARD -> "the TV may get stuck on restart without it"
-        ProtectedReason.UPDATES -> "the TV gets its updates through this"
-        ProtectedReason.UNKNOWN_HOME -> "this TV didn't say which app is its home screen, so Tellyscope won't change anything"
-        ProtectedReason.CAME_WITH_TV -> "it came with the TV, so it can only be disabled"
-        ProtectedReason.DISABLED_BY_TV -> "the TV turned this off itself, so it can't be turned back on from here"
+        ProtectedReason.HOME_SCREEN -> tr("this is your home screen", "这是你的主屏幕")
+        ProtectedReason.SYSTEM -> tr("the TV needs this to work", "电视需要它才能工作")
+        ProtectedReason.SETTINGS -> tr("you need this to change TV settings", "你需要它来更改电视设置")
+        ProtectedReason.PLAY_SERVICES -> tr("most apps stop working without it", "没有它，大多数应用会无法使用")
+        ProtectedReason.KEYBOARD -> tr("you'd lose the on-screen keyboard", "你会失去屏幕键盘")
+        ProtectedReason.TV_INPUTS_REMOTE -> tr("your remote or HDMI inputs could stop working", "遥控器或 HDMI 输入可能会失效")
+        ProtectedReason.SETUP_WIZARD -> tr("the TV may get stuck on restart without it", "没有它，电视重启后可能会卡住")
+        ProtectedReason.UPDATES -> tr("the TV gets its updates through this", "电视通过它获取更新")
+        ProtectedReason.UNKNOWN_HOME -> tr(
+            "this TV didn't say which app is its home screen, so Tellyscope won't change anything",
+            "这台电视没有说明哪个应用是主屏幕，因此 Tellyscope 不会做任何更改",
+        )
+        ProtectedReason.CAME_WITH_TV -> tr("it came with the TV, so it can only be disabled", "它是电视自带的，只能停用")
+        ProtectedReason.DISABLED_BY_TV -> tr(
+            "the TV turned this off itself, so it can't be turned back on from here",
+            "电视自己关闭了它，无法在这里重新启用",
+        )
     }
 
     /** One line for a change the TV refused; what it printed goes in [ActionFailed.details]. */
     private fun failedText(action: Action, label: String) = when (action) {
-        Action.Stop -> "the TV wouldn't stop $label"
-        Action.Disable -> "the TV wouldn't turn $label off"
-        Action.Enable -> "the TV wouldn't turn $label on"
-        Action.Open -> "the TV wouldn't open $label"
-        Action.Uninstall -> "the TV wouldn't uninstall $label"
-        else -> "the TV refused"
+        Action.Stop -> tr("the TV wouldn't stop $label", "电视不肯停止 $label")
+        Action.Disable -> tr("the TV wouldn't turn $label off", "电视不肯关闭 $label")
+        Action.Enable -> tr("the TV wouldn't turn $label on", "电视不肯启用 $label")
+        Action.Open -> tr("the TV wouldn't open $label", "电视不肯打开 $label")
+        Action.Uninstall -> tr("the TV wouldn't uninstall $label", "电视不肯卸载 $label")
+        else -> tr("the TV refused", "电视拒绝了")
     }
 }
 
@@ -1222,7 +1243,7 @@ internal suspend fun switchHome(
         }
     }
     is HomeResult.Refused -> throw IllegalStateException(reason(r.reason))
-    is HomeResult.Failed -> throw ActionFailed(r.output.ifEmpty { "the TV refused" }, r.details)
+    is HomeResult.Failed -> throw ActionFailed(r.output.ifEmpty { tr("the TV refused", "电视拒绝了") }, r.details)
 }
 
 /**
@@ -1240,7 +1261,7 @@ internal suspend fun fireServiceHome(
     record: (previous: Map<String, String?>) -> HistoryEntry,
 ): HistoryEntry {
     if (!withService) throw IllegalStateException(fireNeedsService(label(pkg)))
-    val service = actions.homeService(pkg) ?: throw IllegalStateException("${label(pkg)} has no accessibility service")
+    val service = actions.homeService(pkg) ?: throw IllegalStateException(tr("${label(pkg)} has no accessibility service", "${label(pkg)} 没有无障碍服务"))
     val previous: Map<String, String?> = if (actions.serviceOn(service)) emptyMap()
     else if (actions.grant(service)) mapOf("service" to service)
     else throw IllegalStateException(fireServiceNotOn(label(pkg)))
@@ -1310,21 +1331,34 @@ internal suspend fun undoHomeSwitch(actions: Actions, switch: HistoryEntry): Boo
 /** The package name a reset's History entries carry: it changes the TV, not one app. */
 internal const val RESET = "reset"
 
-private fun serviceNotOn(app: String) =
-    "$app is Home now, but its accessibility service didn't turn on, so the TV's Home button may still open its own launcher"
+private fun serviceNotOn(app: String) = tr(
+    "$app is Home now, but its accessibility service didn't turn on, so the TV's Home button may still open its own launcher",
+    "$app 现在是主屏幕，但它的无障碍服务没有打开，因此电视的主页键仍可能打开自带桌面",
+)
 
 /** Home moved, but the old launcher didn't close or [app] didn't open: [why] is [HandOffFailed.reason]. */
-private fun notShown(app: String, why: String) = "$app is Home now, but $why"
+private fun notShown(app: String, why: String) = tr("$app is Home now, but $why", "$app 现在是主屏幕，但 $why")
 
 /** Fire OS, after No to the service: without it, Home can't open [app]. */
-private fun fireNeedsService(app: String) = "on Fire TV, Home can only open $app through its accessibility service, so nothing changed"
+private fun fireNeedsService(app: String) = tr(
+    "on Fire TV, Home can only open $app through its accessibility service, so nothing changed",
+    "在 Fire TV 上，主页键只能通过无障碍服务打开 $app，因此没有更改",
+)
 
-private fun fireServiceNotOn(app: String) = "the TV didn't turn on $app's accessibility service, so nothing changed"
+private fun fireServiceNotOn(app: String) = tr(
+    "the TV didn't turn on $app's accessibility service, so nothing changed",
+    "电视没有打开 $app 的无障碍服务，因此没有更改",
+)
 
-private fun fireServiceNotOff(app: String) = "the TV didn't turn off $app's accessibility service, so nothing changed"
+private fun fireServiceNotOff(app: String) = tr(
+    "the TV didn't turn off $app's accessibility service, so nothing changed",
+    "电视没有关闭 $app 的无障碍服务，因此没有更改",
+)
 
-private fun serviceNotOff(app: String) =
-    "switched back, but $app's accessibility service is still on. Turn it off in the TV's Settings → Accessibility"
+private fun serviceNotOff(app: String) = tr(
+    "switched back, but $app's accessibility service is still on. Turn it off in the TV's Settings → Accessibility",
+    "已切回，但 $app 的无障碍服务仍开着。请到电视的 设置 → 无障碍 里关掉它",
+)
 
 /**
  * Writes [values] and hands [record] the label and the old values for History. Strict Private DNS
@@ -1341,7 +1375,7 @@ internal suspend fun applyTweak(
 ): HistoryEntry {
     // Only the keys being written: Undo must not touch the ones this change left alone.
     val before = t.read(tweak).filterKeys { it in values }
-    if (!t.write(tweak, values)) throw IllegalStateException("the TV didn't accept the change")
+    if (!t.write(tweak, values)) throw IllegalStateException(tr("the TV didn't accept the change", "电视没有接受这项更改"))
     if (strictDns && !t.resolves()) {
         val restored = try {
             t.write(tweak, before)
@@ -1368,9 +1402,16 @@ internal suspend fun uninstallAfterHomeBack(switchBack: suspend () -> HistoryEnt
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        val why = e.message ?: "the TV refused"
-        // "switched back, but …": Home moved, its service didn't turn off.
-        throw IllegalStateException(if (why.startsWith("switched back")) "$why. Nothing was uninstalled" else "Home didn't switch back: $why. Nothing was uninstalled")
+        val why = e.message ?: tr("the TV refused", "电视拒绝了")
+        // "switched back, but …": Home moved, its service didn't turn off. The Chinese copy starts with 已切回.
+        val switched = why.startsWith("switched back") || why.startsWith("已切回")
+        throw IllegalStateException(
+            if (switched) "$why. ${tr("Nothing was uninstalled", "没有卸载任何内容")}"
+            else tr(
+                "Home didn't switch back: $why. Nothing was uninstalled",
+                "主屏幕没有切回去：$why。没有卸载任何内容",
+            ),
+        )
     }
     return uninstall().also { dropUndo(back.id) }
 }

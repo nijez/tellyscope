@@ -109,6 +109,14 @@ object Reports {
         PORT_5555("Classic network debugging"),
         WIRELESS_DEBUGGING("Wireless debugging (pairing code)"),
         COULD_NOT_CONNECT("Couldn't connect"),
+        ;
+
+        /** Shown in the app. [option] stays English: the GitHub form matches it word for word. */
+        val label get() = when (this) {
+            PORT_5555 -> tr(option, "传统网络调试")
+            WIRELESS_DEBUGGING -> tr(option, "无线调试（配对码）")
+            COULD_NOT_CONNECT -> tr(option, "无法连接")
+        }
     }
 
     /** Our device_report.yml "What happened?" options. */
@@ -117,6 +125,14 @@ object Reports {
         MISBEHAVED("Connected, but something misbehaved"),
         COULD_NOT_CONNECT("Could not connect"),
         PACKAGE_PROBLEM("Disabling a package caused a problem"),
+        ;
+
+        val label get() = when (this) {
+            WORKED -> tr(option, "一切正常")
+            MISBEHAVED -> tr(option, "已连接，但有异常")
+            COULD_NOT_CONNECT -> tr(option, "无法连接")
+            PACKAGE_PROBLEM -> tr(option, "停用某个应用后出了问题")
+        }
     }
 
     /** cleanyourtv's tv-list.yml "How far did you get?" options. */
@@ -125,6 +141,14 @@ object Reports {
         LAUNCHER_FAILED("Debloat worked, launcher did not"),
         HERE_IS_MY_LIST("Both worked, here is my list"),
         BROKE_AFTER("Something broke after the debloat"),
+        ;
+
+        val label get() = when (this) {
+            COULD_NOT_CONNECT -> tr(option, "无法通过 ADB 连接")
+            LAUNCHER_FAILED -> tr(option, "精简成功，桌面没有成功")
+            HERE_IS_MY_LIST -> tr(option, "都成功了，这是我的清单")
+            BROKE_AFTER -> tr(option, "精简之后出了问题")
+        }
     }
 
     /**

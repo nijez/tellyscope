@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -103,6 +105,6 @@ private fun BehindAlertDialog(busy: Boolean, closeAlert: () -> Unit, dismiss: ()
             }
         },
         confirmButton = { FilledTonalButton(onClick = closeAlert, enabled = !busy) { Text(Copy.PRESS_OK) } },
-        dismissButton = { TextButton(onClick = dismiss, enabled = !busy) { Text("Close") } },
+        dismissButton = { TextButton(onClick = dismiss, enabled = !busy) { Text(tr("Close", "关闭")) } },
     )
 }

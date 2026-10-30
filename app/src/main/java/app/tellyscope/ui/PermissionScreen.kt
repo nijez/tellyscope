@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,7 +45,7 @@ fun PermissionScreen(denied: Boolean, canAsk: Boolean, onAllow: () -> Unit, onSe
             ) {
                 Icon(Icons.Default.Search, contentDescription = null, Modifier.size(36.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
             }
-            Text("Find TVs on your Wi-Fi", style = MaterialTheme.typography.headlineMedium)
+            Text(tr("Find TVs on your Wi-Fi", "在 Wi-Fi 上寻找电视"), style = MaterialTheme.typography.headlineMedium)
             Text(
                 "Android asks before an app talks to other devices on your Wi-Fi. " +
                     "Tellyscope only connects to the TVs you pick.",
@@ -51,16 +53,16 @@ fun PermissionScreen(denied: Boolean, canAsk: Boolean, onAllow: () -> Unit, onSe
             )
             if (denied) {
                 Text(
-                    "Without it, Tellyscope can't see any TV. In Settings, open Permissions → Nearby devices and choose Allow.",
+                    tr("Without it, Tellyscope can't see any TV. In Settings, open Permissions → Nearby devices and choose Allow.", "没有这项权限，Tellyscope 看不到任何电视。请到设置里打开 权限 → 附近的设备，并选择允许。"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onSettings) { Text("Open Settings") }
-                    if (canAsk) TextButton(onClick = onAllow) { Text("Ask again") }
+                    Button(onClick = onSettings) { Text(tr("Open Settings", "打开设置")) }
+                    if (canAsk) TextButton(onClick = onAllow) { Text(tr("Ask again", "再次询问")) }
                 }
             } else {
-                Button(onClick = onAllow) { Text("Continue") }
+                Button(onClick = onAllow) { Text(tr("Continue", "继续")) }
             }
         }
     }

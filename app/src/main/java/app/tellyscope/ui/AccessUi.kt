@@ -3,6 +3,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -195,7 +197,7 @@ fun AccessWarning(access: TvAccess, actions: AccessActions, onWho: () -> Unit, s
                 }
                 Icon(
                     if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (open) "Show less" else "Show more",
+                    contentDescription = if (open) tr("Show less", "收起") else tr("Show more", "展开"),
                     Modifier.padding(start = 8.dp),
                 )
             }
@@ -302,7 +304,7 @@ fun AccessScreen(state: UiState, actions: AccessActions, snackbar: SnackbarHostS
                 },
                 navigationIcon = {
                     IconButton(onClick = if (flow) actions.close else actions.back) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = if (flow) Copy.WHO_HAS_ACCESS else "Back to the TV's page")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = if (flow) Copy.WHO_HAS_ACCESS else tr("Back to the TV's page", "返回电视页面"))
                     }
                 },
             )
@@ -374,13 +376,13 @@ private fun AccessList(access: TvAccess?, now: Long, online: Boolean, actions: A
         item { Text(Copy.ACCESS_INTRO, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(bottom = 16.dp)) }
         section(Copy.CONNECTED_NOW)
         when (val list = access?.connected) {
-            null -> item { Muted(if (access == null) "Checking…" else Copy.CANT_CHECK_CONNECTED) }
+            null -> item { Muted(if (access == null) tr("Checking…", "正在检查…") else Copy.CANT_CHECK_CONNECTED) }
             else -> segmented(list) { ConnectedRow(it, actions) }
         }
         item { Spacer(Modifier.height(24.dp)) }
         section(Copy.ALLOWED_COMPUTERS)
         when (val list = access?.allowed) {
-            null -> item { Muted(if (access == null) "Checking…" else Copy.CANT_CHECK_ALLOWED) }
+            null -> item { Muted(if (access == null) tr("Checking…", "正在检查…") else Copy.CANT_CHECK_ALLOWED) }
             emptyList<AccessKey>() -> item { Muted(Copy.NOBODY_ALLOWED) }
             else -> segmented(list) { AllowedRow(it, now, actions) }
         }

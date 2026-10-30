@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -30,15 +32,15 @@ fun UpdateDialog(update: Update, onGet: () -> Unit, onLater: () -> Unit, onSkip:
         title = { Text("🎉 Tellyscope ${update.version} is out") },
         text = {
             Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
-                Text(boldSpans(dialogNotes(update.notes).ifEmpty { "No release notes." }), style = MaterialTheme.typography.bodyMedium)
+                Text(boldSpans(dialogNotes(update.notes).ifEmpty { tr("No release notes.", "没有发行说明。") }), style = MaterialTheme.typography.bodyMedium)
             }
         },
         // Three actions stack full width.
         confirmButton = {
             Column(Modifier.fillMaxWidth()) {
-                Button(onClick = onGet, Modifier.fillMaxWidth()) { Text("Get it") }
-                TextButton(onClick = onSkip, Modifier.fillMaxWidth()) { Text("Skip this version") }
-                TextButton(onClick = onLater, Modifier.fillMaxWidth()) { Text("Later") }
+                Button(onClick = onGet, Modifier.fillMaxWidth()) { Text(tr("Get it", "获取")) }
+                TextButton(onClick = onSkip, Modifier.fillMaxWidth()) { Text(tr("Skip this version", "跳过这个版本")) }
+                TextButton(onClick = onLater, Modifier.fillMaxWidth()) { Text(tr("Later", "以后再说")) }
             }
         },
     )
@@ -52,7 +54,7 @@ internal fun dialogNotes(body: String, max: Int = 12): String {
     val lines = body.substringBefore("### Commits").lines()
         .map { it.replace("`", "").replace(PR_LINK, "").trimEnd() }
         .filter { it.isNotBlank() }
-    return (if (lines.size > max) lines.take(max) + "…and more on GitHub" else lines).joinToString("\n")
+    return (if (lines.size > max) lines.take(max) + tr("…and more on GitHub", "…其余内容见 GitHub") else lines).joinToString("\n")
 }
 
 private val PR_LINK = Regex("""\s*\[#\d+]\([^)]*\)\s*$""")

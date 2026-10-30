@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import app.tellyscope.adb.tr
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -112,7 +114,7 @@ fun ScanScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    if (onBack != null) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    if (onBack != null) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Back", "返回")) }
                 },
             )
         },
@@ -123,14 +125,14 @@ fun ScanScreen(
             Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Text("Add your TV", style = MaterialTheme.typography.headlineMedium)
+            Text(tr("Add your TV", "添加你的电视"), style = MaterialTheme.typography.headlineMedium)
             Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.secondaryContainer) {
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Info, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        if (scan.noLan) "You're not on Wi-Fi, so only TVs that announce themselves show up. Join your TV's Wi-Fi."
-                        else "Keep your phone and TV on the same Wi-Fi.",
+                        if (scan.noLan) tr("You're not on Wi-Fi, so only TVs that announce themselves show up. Join your TV's Wi-Fi.", "你没有连接 Wi-Fi，因此只能看到主动宣告自己的电视。请加入电视所在的 Wi-Fi。")
+                        else tr("Keep your phone and TV on the same Wi-Fi.", "让手机和电视连在同一个 Wi-Fi 上。"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
@@ -148,9 +150,9 @@ fun ScanScreen(
                 TextButton(onClick = { adding = true }) {
                     Icon(Icons.Default.Add, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Add by IP address")
+                    Text(tr("Add by IP address", "用 IP 地址添加"))
                 }
-                TextButton(onClick = { help = true }) { Text("Can't find your TV?") }
+                TextButton(onClick = { help = true }) { Text(tr("Can't find your TV?", "找不到你的电视？")) }
             }
         }
     }
@@ -184,7 +186,7 @@ private fun FoundTvs(scan: ScanUi, now: Long, onRescan: () -> Unit, onPick: (Sca
                     Icon(DeviceIcons.Tv, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(hit.hostname ?: hit.maker ?: "Android device", style = MaterialTheme.typography.titleMedium)
+                        Text(hit.hostname ?: hit.maker ?: tr("Android device", "Android 设备"), style = MaterialTheme.typography.titleMedium)
                         Text(
                             listOfNotNull(hit.maker, hit.ip).joinToString(" · "),
                             style = MaterialTheme.typography.bodyMedium,
@@ -194,9 +196,9 @@ private fun FoundTvs(scan: ScanUi, now: Long, onRescan: () -> Unit, onPick: (Sca
                     FilledTonalButton(onClick = { onPick(hit) }) {
                         Text(
                             when (row) {
-                                RowState.Found -> "Connect"
-                                RowState.NotAllowed -> "Try again"
-                                else -> "Continue"
+                                RowState.Found -> tr("Connect", "连接")
+                                RowState.NotAllowed -> tr("Try again", "重试")
+                                else -> tr("Continue", "继续")
                             },
                         )
                     }
@@ -210,7 +212,7 @@ private fun FoundTvs(scan: ScanUi, now: Long, onRescan: () -> Unit, onPick: (Sca
                     LoadingIndicator(Modifier.size(32.dp))
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        "Looking for ${if (scan.hits.isEmpty()) "your TV" else "more TVs"}…",
+                        if (scan.hits.isEmpty()) tr("Looking for your TV…", "正在寻找你的电视…") else tr("Looking for more TVs…", "正在寻找更多电视…"),
                         Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -231,14 +233,14 @@ private fun FoundTvs(scan: ScanUi, now: Long, onRescan: () -> Unit, onPick: (Sca
                     )
                 }
                 scan.hits.isEmpty() -> Text(
-                    "No TV yet. Tellyscope looks again in a moment.",
+                    tr("No TV yet. Tellyscope looks again in a moment.", "还没有找到电视。Tellyscope 马上会再找一次。"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 else -> TextButton(onClick = onRescan) {
                     Icon(Icons.Default.Refresh, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Scan again")
+                    Text(tr("Scan again", "再次扫描"))
                 }
             }
         }
@@ -265,17 +267,17 @@ private fun OffWifi(modifier: Modifier, onOpenWifi: () -> Unit, onAddByIp: () ->
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text("This phone isn't on Wi-Fi", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+        Text(tr("This phone isn't on Wi-Fi", "这台手机没有连接 Wi-Fi"), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
         Text(
-            "Join the same Wi-Fi as your TV. Tellyscope looks for it again as soon as you're on.",
+            tr("Join the same Wi-Fi as your TV. Tellyscope looks for it again as soon as you're on.", "加入电视所在的 Wi-Fi。连上后 Tellyscope 会立刻再找一次。"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(4.dp))
-        Button(onClick = onOpenWifi) { Text("Open Wi-Fi settings") }
+        Button(onClick = onOpenWifi) { Text(tr("Open Wi-Fi settings", "打开 Wi-Fi 设置")) }
         // VPNs and odd setups can still reach a TV by its address.
-        TextButton(onClick = onAddByIp) { Text("Add by IP address") }
+        TextButton(onClick = onAddByIp) { Text(tr("Add by IP address", "用 IP 地址添加")) }
     }
 }
 
@@ -285,12 +287,12 @@ private fun AddByIpDialog(subnet: String?, onDismiss: () -> Unit, onSubmit: (Str
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add by IP address") },
+        title = { Text(tr("Add by IP address", "用 IP 地址添加")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Find it on the TV under Settings → Network → your Wi-Fi.")
+                Text(tr("Find it on the TV under Settings → Network → your Wi-Fi.", "在电视上打开 设置 → 网络 → 你的 Wi-Fi，就能看到它。"))
                 // The scan screen says "your Wi-Fi"; the range is only useful here, while typing.
-                if (subnet != null) Text("Your Wi-Fi: $subnet", style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (subnet != null) Text(tr("Your Wi-Fi: $subnet", "你的 Wi-Fi：$subnet"), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it; error = null },
@@ -302,7 +304,7 @@ private fun AddByIpDialog(subnet: String?, onDismiss: () -> Unit, onSubmit: (Str
                 )
             }
         },
-        confirmButton = { Button(onClick = { error = onSubmit(text) }) { Text("Connect") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(onClick = { error = onSubmit(text) }) { Text(tr("Connect", "连接")) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel", "取消")) } },
     )
 }
